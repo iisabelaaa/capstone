@@ -52,12 +52,12 @@ def classify_sentiment_and_emotion(user_input):
 
         # Predict sentiment
         sentiment_logits = sentiment_model(**inputs).logits
-        sentiment_idx = torch.argmax(topic_logits, dim=-1).item()
+        sentiment_idx = torch.argmax(sentiment_logits, dim=-1).item()
         sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown")
 
         # Predict emotion
         emotion_logits = emotion_model(**inputs).logits
-        emotion_idx = torch.argmax(topic_logits, dim=-1).item()
+        emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
         emotion = emotion_labels.get(str(emotion_idx), "Unknown")
 
     return topic, sentiment, emotion
