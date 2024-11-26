@@ -43,98 +43,49 @@ for model in [topic_model, sentiment_model, emotion_model]:
 
 # Function to classify sentiment, emotion, and topic
 def classify_sentiment_and_emotion(user_input):
-    """
-    Classify the user's input into topic, sentiment, and emotion.
-    """
     inputs = tokenizer(user_input, return_tensors="pt", truncation=True, padding=True, max_length=128).to(device)
-    
-    try:
-        # Debug raw inputs
-        st.write(f"Tokenized input: {inputs}")
-
-        # Topic Classification
+    with torch.no_grad():
+        # Predict topic
         topic_logits = topic_model(**inputs).logits
         topic_idx = torch.argmax(topic_logits, dim=-1).item()
         topic = topic_labels.get(str(topic_idx), "Unknown")
 
-        # Debugging topic outputs
-        st.write(f"Raw topic logits: {topic_logits}")
-        st.write(f"Predicted topic index: {topic_idx}")
-        st.write(f"Mapped topic label: {topic}")
-
-        # Sentiment Classification
+        # Predict sentiment
         sentiment_logits = sentiment_model(**inputs).logits
-        sentiment_idx = torch.argmax(sentiment_logits, dim=-1).item()
+        sentiment_idx = torch.argmax(topic_logits, dim=-1).item()
         sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown")
 
-        # Debugging sentiment outputs
-        st.write(f"Raw sentiment logits: {sentiment_logits}")
-        st.write(f"Predicted sentiment index: {sentiment_idx}")
-        st.write(f"Mapped sentiment label: {sentiment}")
-
-        # Emotion Classification
+        # Predict emotion
         emotion_logits = emotion_model(**inputs).logits
-        emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
+        emotion_idx = torch.argmax(topic_logits, dim=-1).item()
         emotion = emotion_labels.get(str(emotion_idx), "Unknown")
-
-        # Debugging emotion outputs
-        st.write(f"Raw emotion logits: {emotion_logits}")
-        st.write(f"Predicted emotion index: {emotion_idx}")
-        st.write(f"Mapped emotion label: {emotion}")
-
-    except Exception as e:
-        st.error(f"An error occurred during classification: {e}")
-        # Fallback to "Unknown" if an error occurs
-        topic = "Unknown"
-        sentiment = "Unknown"
-        emotion = "Unknown"
 
     return topic, sentiment, emotion
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
-    """
-    Generate a therapeutic response based on user input, topic, sentiment, emotion, 
-    and the current stage of the conversation.
-    """
-    # Dynamically adapt the conversation prompts based on the stage
-    if conversation_stage == 0:  # Handle unknown input
-        st.write("Stage 0")
+
+    if conversation_stage == 0 or topic == "Unknown" or sentiment == "Unknown" or emotion == "Unknown":
         prompt = (
-            f"The user has provided input that lacks specific emotional, topical, or sentiment-based details. "
-            f"Respond empathetically and encourage them to share more details about their feelings, thoughts, or concerns. "
-            f"Ask open-ended questions to help them elaborate."
+            "The user has provided limited information. "
+            "Ask them open-ended questions to understand their feelings, concerns, or the specific issue they'd like to discuss."
         )
-    elif conversation_stage == 1:  # Encourage user to share more
-        st.write("Stage 1")
+    elif conversation_stage == 1:
         prompt = (
-            f"The user has expressed feeling {sentiment} {emotion} about {topic}. Start the conversation empathetically by "
-            f"asking the user to share more details about their feelings and what might be causing their reaction. "
-            f"Focus on building trust and understanding."
+            f"The user has shared feeling {sentiment} {emotion} about {topic}. Ask more detailed questions to uncover underlying concerns "
+            f"or specific stressors. Focus on helping the user identify actionable steps to address their feelings."
         )
-    elif conversation_stage == 2:  # Explore specific worries
-        st.write("Stage 2")
+    elif conversation_stage == 2:
         prompt = (
-            f"The user has shared their concerns about {topic}. "
-            f"Ask more specific questions to uncover any underlying worries or stressors related to their feelings of {emotion}. "
-            f"Guide the user toward reflecting on these concerns to better understand their anxiety."
+            f"The user feels {sentiment} {emotion} about {topic}. Thank them for sharing. Introduce CBT or mindfulness techniques "
+            f"to help them manage their anxiety effectively."
         )
-    elif conversation_stage == 3:  # Suggest CBT strategies
-        st.write("Stage 3")
+    else:
         prompt = (
-            f"The user feels {sentiment} {emotion} about {topic}. "
-            f"Thank them for sharing their thoughts. Introduce Cognitive Behavioral Therapy techniques or Mindfulness-Based Stress Reduction Therapy "
-            f"techniques. Offer specific exercises they can try to manage their anxiety."
-        )
-    else:  # Final stage: Offer general support and wrap up
-        st.write("Stage 4/5")
-        prompt = (
-            f"You are a therapeutic assistant specializing in anxiety support. The user has been discussing their concerns. "
-            f"Provide a summary of what they've shared and offer continued support. End the response by asking if there’s anything "
-            f"else they’d like to discuss or work on together."
+            "Wrap up the conversation by summarizing the user's concerns and offering further support. "
+            "Ask if there's anything else they'd like to discuss."
         )
 
-    # Generate the response using GPT-3.5
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -143,7 +94,6 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
         ]
     )
     return response["choices"][0]["message"]["content"]
-
 
 
 # Streamlit App Configuration
