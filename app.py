@@ -123,7 +123,7 @@ if "messages" not in st.session_state:
 
 def main():
     # Optional instructions
-    st.markdown("<p style='color: gray; text-align: center;'>*Type <strong>'end session'</strong> anytime to close the conversation.*</p>", unsafe_allow_html=True)
+    st.markdown(":gray[_*Type 'end session' anytime to close the conversation._]")
 
     # Display chat history
     for message in st.session_state.messages:
@@ -160,13 +160,13 @@ def main():
                 st.session_state.conversation_stage = 0
             else:
                 # Generate assistant response
+                st.session_state.conversation_stage += 1  # Move to the next stage
                 assistant_response = generate_therapeutic_response(prompt, topic, sentiment, emotion)
                 with st.chat_message("assistant"):
                     st.markdown(assistant_response)
 
                 # Add assistant response to session
                 st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-                st.session_state.conversation_stage += 1  # Move to the next stage
 
         except Exception as e:
             with st.chat_message("assistant"):
