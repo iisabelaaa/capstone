@@ -81,55 +81,16 @@ st.set_page_config(
     layout="centered",
 )
 
-# Styling
-def apply_custom_styles():
+def main():
+    # Welcome Section
     st.markdown(
         """
-        <style>
-        body {
-            background-color: #F0F8FF; /* Baby blue */
-        }
-        .chat-bubble {
-            background-color: #E3F2FD;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 5px 0;
-            font-size: 16px;
-            width: fit-content;
-        }
-        .user-bubble {
-            background-color: #BBDEFB;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 5px 0;
-            font-size: 16px;
-            text-align: right;
-            width: fit-content;
-            margin-left: auto;
-        }
-        .footer {
-            color: gray;
-            text-align: center;
-            font-size: 12px;
-        }
-        </style>
+        <div style='background-color: #F0F8FF; padding: 10px; border-radius: 10px;'>
+            <h1 style="text-align: center; color: #4682B4;">Anxiety Support Chatbot</h1>
+            <p style="text-align: center; color: #6A5ACD;">Welcome! I'm here to help you manage anxiety and provide support.</p>
+            <p style="text-align: center; font-style: italic; color: gray;">*Type <strong>'end session'</strong> anytime to close the conversation.*</p>
+        </div>
         """,
-        unsafe_allow_html=True,
-    )
-
-# Main Function
-def main():
-    # Apply Custom Styles
-    apply_custom_styles()
-
-    # Welcome Section
-    st.title("Anxiety Support Chatbot")
-    st.markdown(
-        '<p style="text-align:center;">Welcome! I\'m here to help you manage anxiety and provide support.</p>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<p style="color:gray; text-align:center; font-style:italic;">*Type <strong>\'end session\'</strong> anytime to close the conversation.*</p>',
         unsafe_allow_html=True,
     )
 
@@ -138,20 +99,30 @@ def main():
         st.session_state["conversation"] = []
 
     # Display conversation
-    for message in st.session_state["conversation"]:
-        if message["role"] == "user":
-            st.markdown(f'<div class="user-bubble">{message["content"]}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="chat-bubble">{message["content"]}</div>', unsafe_allow_html=True)
+    with st.container():
+        for message in st.session_state["conversation"]:
+            if message["role"] == "user":
+                st.markdown(
+                    f"<div style='text-align: right; background-color: #BBDEFB; padding: 10px; border-radius: 10px; margin: 5px 0;'>{message['content']}</div>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f"<div style='text-align: left; background-color: #E3F2FD; padding: 10px; border-radius: 10px; margin: 5px 0;'>{message['content']}</div>",
+                    unsafe_allow_html=True,
+                )
 
     # Input and Send Button Layout
-    col1, col2 = st.columns([4, 1])  # Adjust proportions as needed
-    with col1:
-        user_input = st.text_area("", placeholder="How can I help you today?", height=50, key="input_area")
-    with col2:
-        send_button = st.button("Send", use_container_width=True)
+    with st.form("user_input_form", clear_on_submit=True):
+        user_input = st.text_area(
+            "How can I help you today?",
+            height=70,
+            max_chars=300,
+            placeholder="Type your message here...",
+        )
+        submitted = st.form_submit_button("Send")
 
-    if send_button:
+    if submitted:
         if user_input.strip():
             if user_input.lower() == "end session":
                 st.session_state["conversation"] = []  # Clear the conversation history
@@ -172,7 +143,7 @@ def main():
 
     # Footer
     st.write("---")
-    st.markdown('<p class="footer">Developed by <strong>IAL</strong> in 2024.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: gray;">Developed by <strong>IAL</strong> in 2024.</p>', unsafe_allow_html=True)
 
 # Run App
 if __name__ == "__main__":
