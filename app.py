@@ -115,10 +115,15 @@ def main():
     
     st.markdown(":gray[_*Type 'end session' anytime to close the conversation._]")
 
-    # Display chat history
+    # Display conversation history
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        avatar_url = (
+            "https://github.com/iisabelaaa/capstone/raw/main/user.png"
+        if message["role"] == "user"
+        else "https://github.com/iisabelaaa/capstone/raw/main/assistant.png"
+    )
+    with st.chat_message(message["role"], avatar=avatar_url):
+        st.markdown(message["content"])
 
     # User input and response logic
     if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
