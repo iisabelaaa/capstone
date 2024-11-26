@@ -117,7 +117,7 @@ if "conversation_stage" not in st.session_state:
 
 def main():
     # Add welcome message
-    st.markdown(":gray[_*Type <strong>'end session'</strong> anytime to close the conversation._]")
+    st.markdown(":gray[_*Type 'end session' anytime to close the conversation._]")
 
     # Display chat history
     for message in st.session_state.messages:
