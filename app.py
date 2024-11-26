@@ -149,6 +149,7 @@ def main():
         if prompt.strip().lower() == "end session":
             st.session_state.clear()
             st.session_state.messages = []
+            st.session_state.conversation_stage = 0
             st.success("Session ended. Feel free to start a new conversation!")
             return
 
