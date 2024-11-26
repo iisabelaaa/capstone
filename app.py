@@ -122,7 +122,9 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def main():
-    # Optional instructions
+
+    st.session_state.conversation_stage = 0
+    
     st.markdown(":gray[_*Type 'end session' anytime to close the conversation._]")
 
     # Display chat history
