@@ -80,7 +80,7 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     elif conversation_stage == 2:  # Suggest CBT strategies
         prompt = (
             f"You are a therapeutic assistant specializing in anxiety support. The user feels {sentiment} {emotion} about {topic}. "
-            f"Thank them for sharing their thoughts. Introduce Cognitive Behavioral Therapy techniques or Mindfulness-Based Stress Reduction Therapy 
+            f"Thank them for sharing their thoughts. Introduce Cognitive Behavioral Therapy techniques or Mindfulness-Based Stress Reduction Therapy "
             f"techniques. Offer specific exercises they can try to manage their anxiety."
         )
     else:  # Final stage: Offer general support and wrap up
