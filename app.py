@@ -144,7 +144,7 @@ def main():
                     "Thank you for reaching out! It seems I need a bit more detail to understand your situation. "
                     "Could you tell me more about how you're feeling or if there's something specific you'd like to discuss?"
                 )
-                with st.chat_message("assistant", avatar=st.image('assistant.png')::
+                with st.chat_message("assistant", avatar=st.image('assistant.png'):
                     st.markdown(clarification)
                 st.session_state.messages.append({"role": "assistant", "content": clarification})
                 st.session_state.conversation_stage = 0
