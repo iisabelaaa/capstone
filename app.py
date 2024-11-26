@@ -59,42 +59,43 @@ def classify_sentiment_and_emotion(user_input):
 
     return topic, sentiment, emotion
 
-# Function to generate therapeutic response using GPT-3.5
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
     """
     Generate a therapeutic response based on user input, topic, sentiment, emotion, 
     and the current stage of the conversation.
     """
-    # Create different prompts for different stages of the conversation
-    if conversation_stage == 0:  # Initial stage: Understand the user's feelings
+    # Dynamically adapt the conversation prompts based on the stage
+    if conversation_stage == 0:  # Initial stage: Encourage user to share more
+        prompt = (
+            f"You are a therapeutic assistant specializing in anxiety support. The user has expressed feeling {sentiment} {emotion} "
+            f"about {topic}. Start the conversation empathetically by asking the user to share more details about their feelings "
+            f"and what might be causing their reaction. Focus on building trust and understanding."
+        )
+    elif conversation_stage == 1:  # Explore specific worries
+        prompt = (
+            f"You are a therapeutic assistant. The user has shared their concerns about {topic}. "
+            f"Ask more specific questions to uncover any underlying worries or stressors related to their feelings of {emotion}. "
+            f"Guide the user toward reflecting on these concerns to better understand their anxiety."
+        )
+    elif conversation_stage == 2:  # Suggest CBT strategies
         prompt = (
             f"You are a therapeutic assistant specializing in anxiety support. The user feels {sentiment} {emotion} about {topic}. "
-            "Start by asking them to share more about their feelings and what's causing this reaction."
+            f"Thank them for sharing their thoughts. Introduce Cognitive Behavioral Therapy techniques or Mindfulness-Based Stress Reduction Therapy 
+            f"techniques. Offer specific exercises they can try to manage their anxiety."
         )
-    elif conversation_stage == 1:  # Second stage: Explore specific concerns
+    else:  # Final stage: Offer general support and wrap up
         prompt = (
-            f"You are a therapeutic assistant specializing in anxiety support. The user has shared their feelings. "
-            f"Ask them more specific questions to help explore any underlying worries, fears, or negative thoughts. "
-            f"Continue the conversation by guiding them to identify these specific concerns."
-        )
-    elif conversation_stage == 2:  # Third stage: Introduce CBT and support
-        prompt = (
-            f"You are a therapeutic assistant specializing in anxiety support. The user feels {sentiment} {emotion} about {topic}. "
-            "Thank them for sharing their concerns. Introduce a Cognitive Behavioral Therapy technique like identifying negative thoughts, "
-            "challenging unhelpful beliefs, or mindfulness exercises. Offer practical strategies to manage anxiety."
-        )
-    else:  # Default fallback: Supportive response
-        prompt = (
-            f"You are a therapeutic assistant specializing in anxiety support. The user feels {sentiment} {emotion} about {topic}. "
-            "Provide a supportive, empathetic response and ask if there is anything else they’d like to share or work through."
+            f"You are a therapeutic assistant specializing in anxiety support. The user has been discussing their concerns. "
+            f"Provide a summary of what they've shared and offer continued support. End the response by asking if there’s anything "
+            f"else they’d like to discuss or work on together."
         )
 
-    # Call GPT-3.5 for generating the response
+    # Generate the response using GPT-3.5
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are a therapeutic assistant specializing in anxiety support."},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": f"The user said: {user_input}. {prompt}"}
         ]
     )
     return response["choices"][0]["message"]["content"]
@@ -151,6 +152,7 @@ def main():
             # Increment the conversation stage
             st.session_state.conversation_stage += 1
 
+st.markdown("<div style='height: 300px;'></div>", unsafe_allow_html=True)
 st.image(
     "https://raw.githubusercontent.com/iisabelaaa/capstone/main/daisy_bg.jpg",
     caption=None,
