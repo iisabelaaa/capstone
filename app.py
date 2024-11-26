@@ -116,13 +116,22 @@ def main():
 
     # Display conversation history
     for message in st.session_state.messages:
+        # Ensure message structure is correct
+        role = message.get("role", "assistant")  # Default to "assistant" if "role" is missing
+        content = message.get("content", "")  # Default to empty string if "content" is missing
+
         avatar_url = (
             "https://github.com/iisabelaaa/capstone/raw/main/user.png"
-        if message["role"] == "user"
-        else "https://github.com/iisabelaaa/capstone/raw/main/assistant.png"
-    )
-    with st.chat_message(message["role"], avatar=avatar_url):
-        st.markdown(message["content"])
+            if role == "user"
+            else "https://github.com/iisabelaaa/capstone/raw/main/assistant.png"
+        )
+
+        try:
+            with st.chat_message(role, avatar=avatar_url):
+                st.markdown(content)
+        except Exception as e:
+            st.error(f"Error displaying message: {e}")
+            continue
 
     # User input and response logic
     if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
