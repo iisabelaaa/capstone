@@ -182,7 +182,7 @@ footer = """
 
 </style>
 <div class="footer">
-    <img src="https://raw.githubusercontent.com/iisabelaaa/capstone/main/daisy_bg.jpg" alt="Daisy Footer">
+    <img src="https://raw.githubusercontent.com/iisabelaaa/capstone/main/daisy.png" alt="Daisy Footer">
 </div>
 """
 st.markdown(footer, unsafe_allow_html=True)
