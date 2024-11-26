@@ -1,14 +1,19 @@
 import streamlit as st
 import torch
-import openai
 import json
 from transformers import RobertaTokenizer, RobertaForSequenceClassification
-
 from huggingface_hub import login
-login("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")
+import openai
 
-# Set your OpenAI API key
-openai.api_key = "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"
+# Access API keys from Streamlit secrets
+huggingface_api_key = st.secrets["huggingface"]["api_key"]
+openai_api_key = st.secrets["openai"]["api_key"]
+
+# Log in to Hugging Face
+login(huggingface_api_key)
+
+# Set OpenAI API key
+openai.api_key = openai_api_key
 
 # Load label mappings from JSON
 with open("label_mappings.json", "r") as f:
