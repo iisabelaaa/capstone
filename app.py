@@ -79,22 +79,18 @@ st.set_page_config(
     page_title="Anxiety Support Chatbot",
     page_icon="🤖",
     layout="centered",
-    initial_sidebar_state="collapsed",
 )
 
-st.title("Anxiety Support Chatbot")
+st.title(color: #4682B4;"Anxiety Support Chatbot")
 
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def main():
-    # Welcome Section
     st.markdown(
         """
-        <div style='background-color: #F0F8FF; padding: 10px; border-radius: 10px;'>
-            <h1 style="color: #4682B4;">Anxiety Support Chatbot</h1>
-            <p style="color: #6A5ACD;">Welcome! I'm here to help you manage anxiety and provide support.</p>
+        <div>
             <p style="text-align: center; font-style: italic; color: gray;">*Type "end session" anytime to close the conversation.*</p>
         </div>
         """,
@@ -107,7 +103,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # User input and response logic
-if prompt := st.chat_input("How can I help you today?"):
+if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
     # Add user message to session
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
