@@ -65,21 +65,27 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     and the current stage of the conversation.
     """
     # Dynamically adapt the conversation prompts based on the stage
-    if conversation_stage == 0:  # Initial stage: Encourage user to share more
+    if conversation_stage == 0:  # Handle unknown input
         prompt = (
-            f"You are a therapeutic assistant specializing in anxiety support. The user has expressed feeling {sentiment} {emotion} "
-            f"about {topic}. Start the conversation empathetically by asking the user to share more details about their feelings "
-            f"and what might be causing their reaction. Focus on building trust and understanding."
+            f"The user has provided input that lacks specific emotional, topical, or sentiment-based details. "
+            f"Respond empathetically and encourage them to share more details about their feelings, thoughts, or concerns. "
+            f"Ask open-ended questions to help them elaborate."
         )
-    elif conversation_stage == 1:  # Explore specific worries
+    elif conversation_stage == 1:  # Encourage user to share more
         prompt = (
-            f"You are a therapeutic assistant. The user has shared their concerns about {topic}. "
+            f"The user has expressed feeling {sentiment} {emotion} about {topic}. Start the conversation empathetically by "
+            f"asking the user to share more details about their feelings and what might be causing their reaction. "
+            f"Focus on building trust and understanding."
+        )
+    elif conversation_stage == 2:  # Explore specific worries
+        prompt = (
+            f"The user has shared their concerns about {topic}. "
             f"Ask more specific questions to uncover any underlying worries or stressors related to their feelings of {emotion}. "
             f"Guide the user toward reflecting on these concerns to better understand their anxiety."
         )
-    elif conversation_stage == 2:  # Suggest CBT strategies
+    elif conversation_stage == 3:  # Suggest CBT strategies
         prompt = (
-            f"You are a therapeutic assistant specializing in anxiety support. The user feels {sentiment} {emotion} about {topic}. "
+            f"The user feels {sentiment} {emotion} about {topic}. "
             f"Thank them for sharing their thoughts. Introduce Cognitive Behavioral Therapy techniques or Mindfulness-Based Stress Reduction Therapy "
             f"techniques. Offer specific exercises they can try to manage their anxiety."
         )
@@ -99,6 +105,8 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
         ]
     )
     return response["choices"][0]["message"]["content"]
+
+
 
 # Streamlit App Configuration
 st.set_page_config(
@@ -149,6 +157,7 @@ def main():
                 with st.chat_message("assistant"):
                     st.markdown(clarification)
                 st.session_state.messages.append({"role": "assistant", "content": clarification})
+                st.session_state.conversation_stage = 0
             else:
                 # Generate assistant response
                 assistant_response = generate_therapeutic_response(prompt, topic, sentiment, emotion)
@@ -157,6 +166,7 @@ def main():
 
                 # Add assistant response to session
                 st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+                st.session_state.conversation_stage += 1  # Move to the next stage
 
         except Exception as e:
             with st.chat_message("assistant"):
