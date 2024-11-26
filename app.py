@@ -60,11 +60,36 @@ def classify_sentiment_and_emotion(user_input):
     return topic, sentiment, emotion
 
 # Function to generate therapeutic response using GPT-3.5
-def generate_therapeutic_response(user_input, topic, sentiment, emotion):
-    prompt = (
-        f"The user feels {sentiment} {emotion} about {topic}. First talk to them and ask about {user_input}. "
-        f"After they answer, provide a supportive response guided by Cognitive Behavioral Therapy and Mindfulness-Based Stress Reduction Therapy."
-    )
+def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
+    """
+    Generate a therapeutic response based on user input, topic, sentiment, emotion, 
+    and the current stage of the conversation.
+    """
+    # Create different prompts for different stages of the conversation
+    if conversation_stage == 0:  # Initial stage: Understand the user's feelings
+        prompt = (
+            f"You are a therapeutic assistant specializing in anxiety support. The user feels {sentiment} {emotion} about {topic}. "
+            "Start by asking them to share more about their feelings and what's causing this reaction."
+        )
+    elif conversation_stage == 1:  # Second stage: Explore specific concerns
+        prompt = (
+            f"You are a therapeutic assistant specializing in anxiety support. The user has shared their feelings. "
+            f"Ask them more specific questions to help explore any underlying worries, fears, or negative thoughts. "
+            f"Continue the conversation by guiding them to identify these specific concerns."
+        )
+    elif conversation_stage == 2:  # Third stage: Introduce CBT and support
+        prompt = (
+            f"You are a therapeutic assistant specializing in anxiety support. The user feels {sentiment} {emotion} about {topic}. "
+            "Thank them for sharing their concerns. Introduce a Cognitive Behavioral Therapy technique like identifying negative thoughts, "
+            "challenging unhelpful beliefs, or mindfulness exercises. Offer practical strategies to manage anxiety."
+        )
+    else:  # Default fallback: Supportive response
+        prompt = (
+            f"You are a therapeutic assistant specializing in anxiety support. The user feels {sentiment} {emotion} about {topic}. "
+            "Provide a supportive, empathetic response and ask if there is anything else they’d like to share or work through."
+        )
+
+    # Call GPT-3.5 for generating the response
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -73,6 +98,7 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion):
         ]
     )
     return response["choices"][0]["message"]["content"]
+
 
 # Streamlit App Configuration
 st.set_page_config(
@@ -86,37 +112,44 @@ st.title("Anxiety Support Chatbot")
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-    <style>
-body {
-    background-color: lightblue;
-}
-</style>
+if "conversation_stage" not in st.session_state:
+    st.session_state.conversation_stage = 0  # Start at the first stage
 
 def main():
-    
-    st.markdown(":gray[_*Type "end session" anytime to close the conversation._]")
+    # Add welcome message
+    st.markdown(":gray[_*Type <strong>'end session'</strong> anytime to close the conversation._]")
 
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    # Display chat history
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-# User input and response logic
-if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
-    # Add user message to session
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # User input and response logic
+    if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
+        # Add user message to session
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-    # Generate assistant response
-    topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
-    assistant_response = generate_therapeutic_response(prompt, topic, sentiment, emotion)
-    with st.chat_message("assistant"):
-        st.markdown(assistant_response)
+        # Check if the user wants to end the session
+        if prompt.lower() == "end session":
+            st.session_state.conversation_stage = 0  # Reset conversation stage
+            st.session_state.messages = []  # Clear message history
+            st.success("Session ended. Feel free to start a new conversation!")
+        else:
+            # Generate assistant response based on the conversation stage
+            topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
+            assistant_response = generate_therapeutic_response(
+                prompt, topic, sentiment, emotion, st.session_state.conversation_stage
+            )
 
-    # Add assistant response to session
-    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+            # Add assistant response to chat
+            with st.chat_message("assistant"):
+                st.markdown(assistant_response)
+            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+            # Increment the conversation stage
+            st.session_state.conversation_stage += 1
 
 # Run App
 if __name__ == "__main__":
