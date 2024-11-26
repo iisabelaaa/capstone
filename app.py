@@ -131,7 +131,7 @@ def main():
 
         # Add user message to session
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar=st.image('user.png')):
             st.markdown(prompt)
 
         # Attempt to classify user input
@@ -144,14 +144,14 @@ def main():
                     "Thank you for reaching out! It seems I need a bit more detail to understand your situation. "
                     "Could you tell me more about how you're feeling or if there's something specific you'd like to discuss?"
                 )
-                with st.chat_message("assistant"):
+                with st.chat_message("assistant", avatar=st.image('assistant.png')::
                     st.markdown(clarification)
                 st.session_state.messages.append({"role": "assistant", "content": clarification})
                 st.session_state.conversation_stage = 0
             else:
                 # Generate assistant response
                 assistant_response = generate_therapeutic_response(prompt, topic, sentiment, emotion, st.session_state.conversation_stage)
-                with st.chat_message("assistant"):
+                with st.chat_message("assistant", avatar=st.image('assistant.png'):
                     st.markdown(assistant_response)
 
                 # Add assistant response to session
@@ -159,7 +159,7 @@ def main():
                 st.session_state.conversation_stage += 1  # Move to the next stage
 
         except Exception as e:
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar=st.image('assistant.png'):
                 st.error(f"An error occurred: {e}")
 
 # Daisy Footer
