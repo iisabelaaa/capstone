@@ -108,10 +108,9 @@ st.title("Anxiety Support Chatbot")
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
+    st.session_state.conversation_stage = 0
 
 def main():
-
-    st.session_state.conversation_stage = 0
     
     st.markdown(":gray[_*Type 'end session' anytime to close the conversation._]")
 
