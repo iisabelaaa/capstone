@@ -107,6 +107,25 @@ st.set_page_config(
     layout="centered",
 )
 
+# Define custom CSS
+custom_css = f"""
+<style>
+    body {{
+        background-color: #CAF0F8; /* Pastel blue background */
+        background-image: url('https://raw.githubusercontent.com/iisabelaaa/capstone/main/daisy_bg.jpg'); /* Daisy field image */
+        background-repeat: no-repeat;
+        background-position: bottom center;
+        background-size: cover; /* Adjust size to fit */
+    }}
+    .stApp {{
+        background: transparent; /* Ensures the app area remains clear */
+    }}
+</style>
+"""
+
+# Inject CSS into the app
+st.markdown(custom_css, unsafe_allow_html=True)
+
 st.title("Anxiety Support Chatbot")
 
 # Initialize session state
