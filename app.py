@@ -66,30 +66,35 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     """
     # Dynamically adapt the conversation prompts based on the stage
     if conversation_stage == 0:  # Handle unknown input
+        st.write("Stage 0")
         prompt = (
             f"The user has provided input that lacks specific emotional, topical, or sentiment-based details. "
             f"Respond empathetically and encourage them to share more details about their feelings, thoughts, or concerns. "
             f"Ask open-ended questions to help them elaborate."
         )
     elif conversation_stage == 1:  # Encourage user to share more
+        st.write("Stage 1")
         prompt = (
             f"The user has expressed feeling {sentiment} {emotion} about {topic}. Start the conversation empathetically by "
             f"asking the user to share more details about their feelings and what might be causing their reaction. "
             f"Focus on building trust and understanding."
         )
     elif conversation_stage == 2:  # Explore specific worries
+        st.write("Stage 2")
         prompt = (
             f"The user has shared their concerns about {topic}. "
             f"Ask more specific questions to uncover any underlying worries or stressors related to their feelings of {emotion}. "
             f"Guide the user toward reflecting on these concerns to better understand their anxiety."
         )
     elif conversation_stage == 3:  # Suggest CBT strategies
+        st.write("Stage 3")
         prompt = (
             f"The user feels {sentiment} {emotion} about {topic}. "
             f"Thank them for sharing their thoughts. Introduce Cognitive Behavioral Therapy techniques or Mindfulness-Based Stress Reduction Therapy "
             f"techniques. Offer specific exercises they can try to manage their anxiety."
         )
     else:  # Final stage: Offer general support and wrap up
+        st.write("Stage 4/5")
         prompt = (
             f"You are a therapeutic assistant specializing in anxiety support. The user has been discussing their concerns. "
             f"Provide a summary of what they've shared and offer continued support. End the response by asking if there’s anything "
