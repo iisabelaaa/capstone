@@ -81,7 +81,7 @@ st.set_page_config(
     layout="centered",
 )
 
-st.title(color: #4682B4;"Anxiety Support Chatbot")
+st.title("Anxiety Support Chatbot")
 
 # Initialize session state
 if "messages" not in st.session_state:
@@ -91,7 +91,7 @@ def main():
     st.markdown(
         """
         <div>
-            <p style="text-align: center; font-style: italic; color: gray;">*Type "end session" anytime to close the conversation.*</p>
+            <p style="font-style: italic; color: gray;">*Type "end session" anytime to close the conversation.*</p>
         </div>
         """,
         unsafe_allow_html=True,
