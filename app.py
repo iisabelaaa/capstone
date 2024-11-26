@@ -100,7 +100,6 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     )
     return response["choices"][0]["message"]["content"]
 
-
 # Streamlit App Configuration
 st.set_page_config(
     page_title="Anxiety Support Chatbot",
@@ -113,12 +112,10 @@ st.title("Anxiety Support Chatbot")
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "conversation_stage" not in st.session_state:
-    st.session_state.conversation_stage = 0  # Start at the first stage
 
 def main():
-    # Add welcome message
-    st.markdown(":gray[_*Type 'end session' anytime to close the conversation._]")
+    # Optional instructions
+    st.markdown("<p style='color: gray; text-align: center;'>*Type <strong>'end session'</strong> anytime to close the conversation.*</p>", unsafe_allow_html=True)
 
     # Display chat history
     for message in st.session_state.messages:
@@ -127,38 +124,69 @@ def main():
 
     # User input and response logic
     if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
+        # Check for "end session" command
+        if prompt.strip().lower() == "end session":
+            st.session_state.clear()  # Clear the entire session state
+            st.session_state.messages = []  # Ensure the messages list is reinitialized
+            st.success("Session ended. Feel free to start a new conversation!")
+            return  # Stop further execution for this interaction
+
         # Add user message to session
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Check if the user wants to end the session
-        if prompt.lower() == "end session":
-            st.session_state.conversation_stage = 0  # Reset conversation stage
-            st.session_state.messages = []  # Clear message history
-            st.success("Session ended. Feel free to start a new conversation!")
-        else:
-            # Generate assistant response based on the conversation stage
+        # Attempt to classify user input
+        try:
             topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
-            assistant_response = generate_therapeutic_response(
-                prompt, topic, sentiment, emotion, st.session_state.conversation_stage
-            )
+            
+            # Check if classification results are valid
+            if topic == "Unknown" or sentiment == "Unknown" or emotion == "Unknown":
+                clarification = (
+                    "Thank you for reaching out! It seems I need a bit more detail to understand your situation. "
+                    "Could you tell me more about how you're feeling or if there's something specific you'd like to discuss?"
+                )
+                with st.chat_message("assistant"):
+                    st.markdown(clarification)
+                st.session_state.messages.append({"role": "assistant", "content": clarification})
+            else:
+                # Generate assistant response
+                assistant_response = generate_therapeutic_response(prompt, topic, sentiment, emotion)
+                with st.chat_message("assistant"):
+                    st.markdown(assistant_response)
 
-            # Add assistant response to chat
+                # Add assistant response to session
+                st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+        except Exception as e:
             with st.chat_message("assistant"):
-                st.markdown(assistant_response)
-            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+                st.error(f"An error occurred: {e}")
 
-            # Increment the conversation stage
-            st.session_state.conversation_stage += 1
+# Daisy Footer
+footer = """
+<style>
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: transparent;
+    text-align: center;
+    padding: 10px 0;
+}
 
-st.markdown("<div style='height: 300px;'></div>", unsafe_allow_html=True)
-st.image(
-    "https://raw.githubusercontent.com/iisabelaaa/capstone/main/daisy_bg.jpg",
-    caption=None,
-    use_column_width=True,
-    output_format="auto",
-)
+.footer img {
+    width: 100%;
+    height: auto;
+}
+
+</style>
+<div class="footer">
+    <img src="https://raw.githubusercontent.com/iisabelaaa/capstone/main/daisy_bg.jpg" alt="Daisy Footer">
+</div>
+"""
+st.markdown(footer, unsafe_allow_html=True)
+
 
 # Run App
 if __name__ == "__main__":
