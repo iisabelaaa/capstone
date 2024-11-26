@@ -108,6 +108,7 @@ st.title("Anxiety Support Chatbot")
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "conversation_stage" not in st.session_state:
     st.session_state.conversation_stage = 0
 
 def main():
