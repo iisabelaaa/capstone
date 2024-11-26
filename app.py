@@ -88,14 +88,14 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def main():
-    st.markdown(
-        """
-        <div>
-            <p style="font-style: italic; color: gray;">*Type "end session" anytime to close the conversation.*</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+
+    <style>
+body {
+    background-color: lightblue;
+}
+</style>
+    
+    st.markdown(":gray[_*Type "end session" anytime to close the conversation._]")
 
 # Display chat history
 for message in st.session_state.messages:
@@ -117,11 +117,6 @@ if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and pro
 
     # Add assistant response to session
     st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-
-
-    # Footer
-    st.write("---")
-    st.markdown('<p style="text-align: center; color: gray;">Developed by <strong>IAL</strong> in 2024.</p>', unsafe_allow_html=True)
 
 # Run App
 if __name__ == "__main__":
