@@ -43,21 +43,54 @@ for model in [topic_model, sentiment_model, emotion_model]:
 
 # Function to classify sentiment, emotion, and topic
 def classify_sentiment_and_emotion(user_input):
+    """
+    Classify the user's input into topic, sentiment, and emotion.
+    """
     inputs = tokenizer(user_input, return_tensors="pt", truncation=True, padding=True, max_length=128).to(device)
-    with torch.no_grad():
-        # Predict topic
-        topic_idx = torch.argmax(topic_model(**inputs).logits, dim=-1).item()
+    
+    try:
+        # Debug raw inputs
+        st.write(f"Tokenized input: {inputs}")
+
+        # Topic Classification
+        topic_logits = topic_model(**inputs).logits
+        topic_idx = torch.argmax(topic_logits, dim=-1).item()
         topic = topic_labels.get(str(topic_idx), "Unknown")
 
-        # Predict sentiment
-        sentiment_idx = torch.argmax(sentiment_model(**inputs).logits, dim=-1).item()
+        # Debugging topic outputs
+        st.write(f"Raw topic logits: {topic_logits}")
+        st.write(f"Predicted topic index: {topic_idx}")
+        st.write(f"Mapped topic label: {topic}")
+
+        # Sentiment Classification
+        sentiment_logits = sentiment_model(**inputs).logits
+        sentiment_idx = torch.argmax(sentiment_logits, dim=-1).item()
         sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown")
 
-        # Predict emotion
-        emotion_idx = torch.argmax(emotion_model(**inputs).logits, dim=-1).item()
+        # Debugging sentiment outputs
+        st.write(f"Raw sentiment logits: {sentiment_logits}")
+        st.write(f"Predicted sentiment index: {sentiment_idx}")
+        st.write(f"Mapped sentiment label: {sentiment}")
+
+        # Emotion Classification
+        emotion_logits = emotion_model(**inputs).logits
+        emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
         emotion = emotion_labels.get(str(emotion_idx), "Unknown")
 
+        # Debugging emotion outputs
+        st.write(f"Raw emotion logits: {emotion_logits}")
+        st.write(f"Predicted emotion index: {emotion_idx}")
+        st.write(f"Mapped emotion label: {emotion}")
+
+    except Exception as e:
+        st.error(f"An error occurred during classification: {e}")
+        # Fallback to "Unknown" if an error occurs
+        topic = "Unknown"
+        sentiment = "Unknown"
+        emotion = "Unknown"
+
     return topic, sentiment, emotion
+
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
     """
