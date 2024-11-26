@@ -79,67 +79,49 @@ st.set_page_config(
     page_title="Anxiety Support Chatbot",
     page_icon="🤖",
     layout="centered",
+    initial_sidebar_state="collapsed",
 )
+
+st.title("Anxiety Support Chatbot")
+
+# Initialize session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 def main():
     # Welcome Section
     st.markdown(
         """
         <div style='background-color: #F0F8FF; padding: 10px; border-radius: 10px;'>
-            <h1 style="text-align: center; color: #4682B4;">Anxiety Support Chatbot</h1>
-            <p style="text-align: center; color: #6A5ACD;">Welcome! I'm here to help you manage anxiety and provide support.</p>
-            <p style="text-align: center; font-style: italic; color: gray;">*Type <strong>'end session'</strong> anytime to close the conversation.*</p>
+            <h1 style="color: #4682B4;">Anxiety Support Chatbot</h1>
+            <p style="color: #6A5ACD;">Welcome! I'm here to help you manage anxiety and provide support.</p>
+            <p style="text-align: center; font-style: italic; color: gray;">*Type "end session" anytime to close the conversation.*</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Initialize conversation history
-    if "conversation" not in st.session_state:
-        st.session_state["conversation"] = []
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-    # Display conversation
-    with st.container():
-        for message in st.session_state["conversation"]:
-            if message["role"] == "user":
-                st.markdown(
-                    f"<div style='text-align: right; background-color: #BBDEFB; padding: 10px; border-radius: 10px; margin: 5px 0;'>{message['content']}</div>",
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    f"<div style='text-align: left; background-color: #E3F2FD; padding: 10px; border-radius: 10px; margin: 5px 0;'>{message['content']}</div>",
-                    unsafe_allow_html=True,
-                )
+# User input and response logic
+if prompt := st.chat_input("How can I help you today?"):
+    # Add user message to session
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-    # Input and Send Button Layout
-    with st.form("user_input_form", clear_on_submit=True):
-        user_input = st.text_area(
-            "How can I help you today?",
-            height=70,
-            max_chars=300,
-            placeholder="Type your message here...",
-        )
-        submitted = st.form_submit_button("Send")
+    # Generate assistant response
+    topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
+    assistant_response = generate_therapeutic_response(prompt, topic, sentiment, emotion)
+    with st.chat_message("assistant"):
+        st.markdown(assistant_response)
 
-    if submitted:
-        if user_input.strip():
-            if user_input.lower() == "end session":
-                st.session_state["conversation"] = []  # Clear the conversation history
-                st.success("Session ended. Feel free to start a new conversation!")
-            else:
-                try:
-                    # Classify and Generate
-                    topic, sentiment, emotion = classify_sentiment_and_emotion(user_input)
-                    assistant_response = generate_therapeutic_response(user_input, topic, sentiment, emotion)
+    # Add assistant response to session
+    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
-                    # Append conversation history
-                    st.session_state["conversation"].append({"role": "user", "content": user_input})
-                    st.session_state["conversation"].append({"role": "assistant", "content": assistant_response})
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
-        else:
-            st.warning("Please enter a valid input.")
 
     # Footer
     st.write("---")
