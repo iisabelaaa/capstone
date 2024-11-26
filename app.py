@@ -81,11 +81,86 @@ st.set_page_config(
     layout="centered",
 )
 
+# CSS for Chatbox Styling
+st.markdown(
+    """
+    <style>
+    .chatbox {
+        background-color: #A7C7E7; /* Pastel blue */
+        color: black;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        max-width: 60%;
+    }
+    .user-box {
+        background-color: #F3F3F3; /* Light grey */
+        color: black;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        max-width: 60%;
+        margin-left: auto;
+        margin-right: 0;
+    }
+    .assistant-box {
+        background-color: #E9F5FB; /* Lighter pastel blue */
+        color: black;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        max-width: 60%;
+        margin-right: auto;
+        margin-left: 0;
+    }
+    .input-container {
+        display: flex;
+        align-items: center;
+        background-color: white;
+        border: 1px solid #CCC;
+        border-radius: 10px;
+        padding: 5px;
+        margin-top: 10px;
+    }
+    .input-container textarea {
+        flex-grow: 1;
+        resize: none;
+        border: none;
+        padding: 10px;
+        font-size: 1em;
+        border-radius: 10px;
+        outline: none;
+    }
+    .input-container button {
+        background-color: #A7C7E7; /* Pastel blue */
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 10px;
+        font-size: 1em;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    .input-container button:hover {
+        background-color: #85A9D0; /* Slightly darker blue */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 def main():
     # Welcome Section
     st.title("Anxiety Support Chatbot")
     st.markdown("Welcome! I'm here to help you manage anxiety and provide support.")
-    st.markdown("**Type 'end session' anytime to close the conversation.**")
+    st.markdown(
+        """
+        <p style="color: gray; font-size: 0.9em; margin-top: 10px; margin-left: 10px;">
+            * Type "end session" anytime to close the conversation.
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # Initialize conversation history
     if "conversation" not in st.session_state:
@@ -94,35 +169,38 @@ def main():
     # Display conversation
     for message in st.session_state["conversation"]:
         if message["role"] == "user":
-            st.markdown(f"**You:** {message['content']}")
+            st.markdown(f"<div class='user-box'>You: {message['content']}</div>", unsafe_allow_html=True)
         else:
-            st.markdown(f"**Assistant:** {message['content']}")
+            st.markdown(f"<div class='assistant-box'>Assistant: {message['content']}</div>", unsafe_allow_html=True)
 
-    # User Input
-    user_input = st.text_input("How can I help you today?", "")
+    # Input container
+    st.markdown("<div class='input-container'>", unsafe_allow_html=True)
+    user_input = st.text_area("", placeholder="How can I help you today?", height=50, max_chars=300, key="input_area")
+    send_button = st.button("Send", key="send_button")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.button("Send"):
-        if user_input.strip():
-            if user_input.lower() == "end session":
-                st.session_state["conversation"] = []  # Clear the conversation history
-                st.success("Session ended. Feel free to start a new conversation!")
-            else:
-                try:
-                    # Call functions defined in another cell
-                    topic, sentiment, emotion = classify_sentiment_and_emotion(user_input)
-                    assistant_response = generate_therapeutic_response(user_input, topic, sentiment, emotion)
-
-                    # Append the interaction to the conversation
-                    st.session_state["conversation"].append({"role": "user", "content": user_input})
-                    st.session_state["conversation"].append({"role": "assistant", "content": assistant_response})
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
+    # Handle user input
+    if send_button and user_input.strip():
+        if user_input.lower() == "end session":
+            st.session_state["conversation"] = []  # Clear the conversation history
+            st.success("Session ended. Feel free to start a new conversation!")
         else:
-            st.warning("Please enter a valid input.")
+            try:
+                # Call your sentiment, emotion, and topic classification functions
+                topic, sentiment, emotion = classify_sentiment_and_emotion(user_input)
+                assistant_response = generate_therapeutic_response(user_input, topic, sentiment, emotion)
+
+                # Append the conversation
+                st.session_state["conversation"].append({"role": "user", "content": user_input})
+                st.session_state["conversation"].append({"role": "assistant", "content": assistant_response})
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+    elif send_button:
+        st.warning("Please enter a valid input.")
 
     # Footer
     st.write("---")
-    st.markdown("Developed by IAL in 2024.")
+    st.markdown("<p style='text-align: center;'>Developed by IAL in 2024</p>", unsafe_allow_html=True)
 
 # Run the app
 if __name__ == "__main__":
