@@ -87,13 +87,13 @@ st.title("Anxiety Support Chatbot")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-def main():
-
     <style>
 body {
     background-color: lightblue;
 }
 </style>
+
+def main():
     
     st.markdown(":gray[_*Type "end session" anytime to close the conversation._]")
 
