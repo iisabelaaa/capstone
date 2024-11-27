@@ -34,104 +34,132 @@ for model in [topic_model, sentiment_model, emotion_model]:
     model.to(device)
 
 def classify_sentiment_and_emotion(user_input):
+    """
+    Classifies the input for topic, sentiment, and emotion.
+    Handles generic greetings explicitly as "Generic Greeting".
+    """
     try:
-        # Tokenize input
+        # Tokenize input for models
         inputs = tokenizer(user_input, return_tensors="pt", truncation=True, padding=True, max_length=128).to(device)
 
         with torch.no_grad():
             # Predict topic
             topic_logits = topic_model(**inputs).logits
             topic_probs = torch.softmax(topic_logits, dim=-1).cpu().numpy()
-            topic_confidence = max(topic_probs[0])  # Highest probability
+            topic_confidence = max(topic_probs[0])  # Highest probability for topic
             topic_idx = torch.argmax(topic_logits, dim=-1).item()
-            topic = topic_labels.get(str(topic_idx), "Unknown") if topic_confidence > 0.5 else "Unknown"  # Threshold
+            topic = topic_labels.get(str(topic_idx), "Unknown") if topic_confidence > 0.5 else "Unknown"
 
             # Predict sentiment
             sentiment_logits = sentiment_model(**inputs).logits
             sentiment_probs = torch.softmax(sentiment_logits, dim=-1).cpu().numpy()
-            sentiment_confidence = max(sentiment_probs[0])  # Highest probability
+            sentiment_confidence = max(sentiment_probs[0])  # Highest probability for sentiment
             sentiment_idx = torch.argmax(sentiment_logits, dim=-1).item()
-            sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown") if sentiment_confidence > 0.5 else "Unknown"  # Threshold
+            sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown") if sentiment_confidence > 0.5 else "Unknown"
 
             # Predict emotion
             emotion_logits = emotion_model(**inputs).logits
             emotion_probs = torch.softmax(emotion_logits, dim=-1).cpu().numpy()
-            emotion_confidence = max(emotion_probs[0])  # Highest probability
+            emotion_confidence = max(emotion_probs[0])  # Highest probability for emotion
             emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
-            emotion = emotion_labels.get(str(emotion_idx), "Unknown") if emotion_confidence > 0.5 else "Unknown"  # Threshold
+            emotion = emotion_labels.get(str(emotion_idx), "Unknown") if emotion_confidence > 0.5 else "Unknown"
 
-        # Debugging: Display classifications and confidences
-        st.write(f"Debug → Topic: {topic} (Confidence: {topic_confidence:.2f}), "
-                         f"Sentiment: {sentiment} (Confidence: {sentiment_confidence:.2f}), "
-                         f"Emotion: {emotion} (Confidence: {emotion_confidence:.2f})")
+        # Handle generic greeting explicitly
+        if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown" and len(user_input.split()) < 3:
+            return "Generic Greeting", "neutral", "neutral"
+
+        # Debugging: Write classifications and confidences
+        st.sidebar.write(
+            f"Debug → Topic: {topic} (Confidence: {topic_confidence:.2f}), "
+            f"Sentiment: {sentiment} (Confidence: {sentiment_confidence:.2f}), "
+            f"Emotion: {emotion} (Confidence: {emotion_confidence:.2f})"
+        )
 
         return topic, sentiment, emotion
-    except Exception as e:
-        st.write(f"Classification Error: {e}")
-        # Fallback to "Unknown"
-        return "Unknown", "Unknown", "Unknown"
 
+    except Exception as e:
+        st.sidebar.write(f"Classification Error: {e}")
+        return "Unknown", "Unknown", "Unknown"  # Fallback for errors
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
-    # Handle stage -1 for all unknown classifications
+    # Base system message
+    system_message = "You are a therapeutic assistant specializing in anxiety support."
+
+    # Handle stage -1: Unknown classifications
     if conversation_stage == -1:
-        return "Hi there! Could you tell me a bit more about how you're feeling or what's been on your mind? I'm here to listen and support you."
-
-    # Handle stage -2 for support-only requests
-    if conversation_stage == -2:
-        return "Thank you for sharing how you're feeling. It's okay to need support without wanting advice. I'm here to listen. Feel free to share more when you're ready."
-
-    # Normal conversation stages
-    if conversation_stage == 0:
-        prompt = (
-            "The user is starting the conversation. Greet them warmly and encourage them to share their thoughts and feelings."
+        user_prompt = (
+            "The user has shared input, but I couldn't determine the specific topic, sentiment, or emotion. "
+            "Greet them warmly and encourage them to elaborate on their feelings or share more about what's on their mind."
         )
+
+    # Handle stage -2: Support-only requests
+    elif conversation_stage == -2:
+        user_prompt = (
+            "The user has expressed that they want emotional support without suggestions or strategies. "
+            "Respond empathetically and validate their feelings without offering advice."
+        )
+
+    # Handle stage 0: Beginning the conversation
+    elif conversation_stage == 0:
+        user_prompt = (
+            "The user is starting the conversation. Greet them warmly, thank them for reaching out, and encourage them to share more about their feelings or thoughts."
+        )
+
+    # Handle stage 1: Exploring the user's feelings
     elif conversation_stage == 1:
-        prompt = (
-            f"The user feels {emotion} and {sentiment} about {topic}. Respond empathetically and ask an open-ended question to explore the situation further."
-        )
-    elif conversation_stage == 2:
-        prompt = (
-            f"The user has shared feeling {emotion} and {sentiment} about {topic}. Ask them to identify specific aspects causing their anxiety or stress. "
-            "Focus on understanding their main triggers."
-        )
-    elif conversation_stage == 3:
-        prompt = (
-            f"The user is feeling {emotion} and {sentiment} about {topic}. They mentioned specific concerns. Suggest actionable CBT techniques, "
-            "such as thought challenging, reframing, or small preparation steps. Offer examples if needed."
-        )
-    elif conversation_stage == 4:
-        prompt = (
-            f"The user is feeling {emotion} and {sentiment} about {topic}. They want detailed guidance on applying CBT techniques. "
-            "Explain how to use CBT methods step by step, like thought records, exposure tasks, or mindfulness exercises. Provide clear examples."
-        )
-    elif conversation_stage == 5:
-        prompt = (
-            f"The user has discussed their concerns about {topic} and seems to be wrapping up. Reinforce their progress and offer encouragement. "
-            "If they request more strategies, redirect to earlier stages for additional techniques. If they bring up a new topic, restart at stage 1."
-        )
-    else:
-        prompt = (
-            "Summarize the key points discussed, express encouragement, and offer additional support. Redirect the user if they wish to explore something new or need more help."
+        user_prompt = (
+            f"The user feels {sentiment} and experiences {emotion} about {topic if topic != 'Unknown' else 'a situation'}. "
+            "Respond empathetically and ask open-ended questions to help them explore their feelings further."
         )
 
+    # Handle stage 2: Identifying triggers and stressors
+    elif conversation_stage == 2:
+        user_prompt = (
+            f"The user has shared feeling {sentiment} and experiencing {emotion} about {topic}. "
+            "Ask them to identify specific aspects causing their anxiety or stress. Focus on understanding their main triggers."
+        )
+
+    # Handle stage 3: Introducing actionable techniques
+    elif conversation_stage == 3:
+        user_prompt = (
+            f"The user is feeling {sentiment} and experiencing {emotion} about {topic}. "
+            "Suggest actionable CBT techniques, such as thought challenging, reframing, or mindfulness exercises. "
+            "Validate their feelings and encourage them to try these techniques."
+        )
+
+    # Handle stage 4: Providing detailed guidance
+    elif conversation_stage == 4:
+        user_prompt = (
+            f"The user feels {sentiment} and experiences {emotion} about {topic}. "
+            "Provide detailed guidance on using CBT techniques step by step, like thought records, exposure tasks, or journaling. "
+            "Offer specific examples where possible."
+        )
+
+    # Handle stage 5: Wrapping up the conversation
+    elif conversation_stage == 5:
+        user_prompt = (
+            f"The user has discussed their concerns about {topic}. Summarize their key concerns and progress. "
+            "Reinforce their achievements, provide encouragement, and ask if there’s anything else they’d like to discuss. "
+            "If they request more strategies, redirect to earlier stages."
+        )
+
+    # Handle unknown stages
+    else:
+        user_prompt = (
+            "Summarize the key points discussed, express encouragement, and ask if there’s anything else the user would like to talk about. "
+            "If they bring up a new topic, restart the conversation flow."
+        )
+
+    # Generate the response using OpenAI
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are a therapeutic assistant specializing in anxiety support."},
-            {"role": "user", "content": f"The user said: {user_input}. {prompt}"}
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": f"The user said: {user_input}. {user_prompt}"}
         ]
     )
     return response["choices"][0]["message"]["content"]
-
-def is_relevant_input(user_input):
-    """
-    Check if the input is meaningful enough to proceed to classification.
-    Returns False for short or generic inputs like greetings.
-    """
-    generic_responses = ["hi", "hello", "hey", "sup", "what's up"]
-    return user_input.strip().lower() not in generic_responses
 
 
 # Streamlit App Configuration
@@ -185,21 +213,25 @@ def main():
         emotion = "Unknown"
 
         try:
-            # Check if input is relevant
-            if not is_relevant_input(prompt):
+            # Classify the user input
+            topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
+
+            # Debugging: Write classifications to sidebar
+            st.sidebar.write(f"Debug → Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
+
+            # Handle generic greetings
+            if topic == "Generic Greeting":
+                assistant_response = "Hi there! How can I help you today? Feel free to share what’s on your mind."
+                st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+                with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
+                    st.markdown(assistant_response)
+                return
+
+            # Check if all classifications are unknown
+            if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
                 st.session_state.conversation_stage = -1
             else:
-                # Classify the user input
-                topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
-
-                # Debugging: Write classifications to sidebar
-                st.sidebar.write(f"Debug → Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
-
-                # Check if all classifications are unknown
-                if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
-                    st.session_state.conversation_stage = -1
-                else:
-                    st.session_state.conversation_stage += 1
+                st.session_state.conversation_stage += 1
 
             # Generate the response
             assistant_response = generate_therapeutic_response(
@@ -222,7 +254,6 @@ def main():
                 st.markdown(assistant_response)
 
             st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-
 
 
 footer = """
