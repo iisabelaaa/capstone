@@ -125,6 +125,15 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     )
     return response["choices"][0]["message"]["content"]
 
+def is_relevant_input(user_input):
+    """
+    Check if the input is meaningful enough to proceed to classification.
+    Returns False for short or generic inputs like greetings.
+    """
+    generic_responses = ["hi", "hello", "hey", "sup", "what's up"]
+    return user_input.strip().lower() not in generic_responses
+
+
 # Streamlit App Configuration
 st.set_page_config(
     page_title="Anxiety Support Chatbot",
@@ -170,16 +179,21 @@ def main():
             st.markdown(prompt)
 
         try:
-            # Classify the user input
-            topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
-
-            # Check if all classifications are unknown
-            if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
+            # Check if input is relevant
+            if not is_relevant_input(prompt):
                 st.session_state.conversation_stage = -1
-            elif "support" in prompt.lower() and "strategy" not in prompt.lower():
-                st.session_state.conversation_stage = -2
             else:
-                st.session_state.conversation_stage += 1
+                # Classify the user input
+                topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
+
+                # Debugging: Write classifications to sidebar
+                st.sidebar.write(f"Debug → Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
+
+                # Check if all classifications are unknown
+                if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
+                    st.session_state.conversation_stage = -1
+                else:
+                    st.session_state.conversation_stage += 1
 
             # Generate the response
             assistant_response = generate_therapeutic_response(
@@ -192,8 +206,8 @@ def main():
             st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
         except Exception as e:
-            with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
-                st.error(f"An error occurred: {e}")
+            st.error(f"An error occurred: {e}")
+
 
 footer = """
 <style>
