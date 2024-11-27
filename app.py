@@ -79,6 +79,8 @@ def classify_sentiment_and_emotion(user_input):
         return "Unknown", "Unknown", "Unknown"
 
 def is_greeting(user_input):
+    if not isinstance(user_input, str):
+        return False  # Safely return False if input is None or not a string
     greetings = ["hello", "hi", "hey", "greetings", "what's up", "howdy", "sup"]
     return user_input.strip().lower() in greetings
 
