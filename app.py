@@ -64,23 +64,14 @@ def classify_sentiment_and_emotion(user_input):
             emotion_confidence = max(emotion_probs[0])
             emotion = emotion_labels.get(str(emotion_idx), "Unknown") if emotion_confidence > 0.5 else "Unknown"
 
-        # Debugging: Write classifications
-        st.sidebar.write(
-            f"Debug → Topic: {topic} (Confidence: {topic_confidence:.2f}), "
-            f"Sentiment: {sentiment} (Confidence: {sentiment_confidence:.2f}), "
-            f"Emotion: {emotion} (Confidence: {emotion_confidence:.2f})"
-        )
-
         return topic, sentiment, emotion
 
     except Exception as e:
-        # Handle errors
-        st.sidebar.write(f"Classification Error: {e}")
         return "Unknown", "Unknown", "Unknown"
 
 def is_greeting(user_input):
     if not isinstance(user_input, str):
-        return False  # Safely return False if input is None or not a string
+        return False
     greetings = ["hello", "hi", "hey", "greetings", "what's up", "howdy", "sup"]
     return user_input.strip().lower() in greetings
 
@@ -267,9 +258,6 @@ def main():
         # Classify the user input
         topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
 
-        # Debugging: Write classifications to sidebar
-        st.sidebar.write(f"Debug → Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
-
         # Check if all classifications are unknown
         if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
             st.session_state.conversation_stage = -1  # Stay in "unknown" stage
@@ -291,7 +279,6 @@ def main():
     except Exception as e:
         # Log error and ensure variables are handled
         st.error(f"An error occurred: {e}")
-        st.sidebar.write(f"Error Debugging: {e}")
 
         # Fallback response for error handling
         assistant_response = "I encountered an issue while processing your input. Could you please try rephrasing or sharing more details?"
