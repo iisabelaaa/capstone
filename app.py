@@ -53,6 +53,9 @@ def classify_sentiment_and_emotion(user_input):
             emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
             emotion = emotion_labels.get(str(emotion_idx), "Unknown")
 
+        # Debugging: Display classifications in the app
+        st.write(f"Debug -> Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
+
         return topic, sentiment, emotion
     except Exception:
         # If any error occurs, default to "Unknown"
@@ -158,8 +161,6 @@ def main():
         try:
             # Classify the user input
             topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
-                    # Debugging: Print classification results
-        print(f"Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
 
             # Check if all classifications are unknown
             if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
