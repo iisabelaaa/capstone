@@ -94,7 +94,15 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     elif conversation_stage == -2:
         user_prompt = (
             "The user has expressed that they want emotional support without suggestions or strategies. "
-            "Respond empathetically and validate their feelings without offering advice."
+            "Respond empathetically, validate their feelings, and provide reassurance without offering advice."
+        )
+
+    # Handle gratitude for the bot (e.g., "Thanks for helping me")
+    elif emotion == "gratitude" and topic == "Unknown":
+        user_prompt = (
+            "The user has expressed gratitude, possibly towards the assistant. "
+            "Acknowledge their courage and progress in seeking support and addressing their concerns. "
+            "Encourage them to continue taking steps forward, and ask if there's anything else they'd like to discuss or explore further."
         )
 
     # Handle stage 0: Beginning the conversation
@@ -105,19 +113,24 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
 
     # Handle stage 1: Exploring the user's feelings
     elif conversation_stage == 1:
-        if topic == "Unknown" and emotion == "Unknown" and sentiment != "Unknown":
-            user_prompt = (
-                f"The user feels {sentiment}, but the specific topic and emotion are unclear. "
-                "Encourage them to share more about what they're experiencing or thinking about."
-            )
-        elif topic == "Unknown" and emotion != "Unknown" and sentiment != "Unknown":
-            user_prompt = (
-                f"The user feels {sentiment} and is experiencing {emotion}, but the topic is unclear. "
-                "Ask open-ended questions to explore what might be causing these feelings."
-            )
+        if topic == "Unknown":
+            if sentiment != "Unknown" and emotion != "Unknown":
+                user_prompt = (
+                    f"The user feels {sentiment} and experiences {emotion}, but the topic is unclear. "
+                    "Respond empathetically and ask open-ended questions to help them explore their thoughts or feelings further."
+                )
+            elif sentiment != "Unknown":
+                user_prompt = (
+                    f"The user feels {sentiment}, but the topic and emotion are unclear. "
+                    "Encourage them to share more about what's on their mind or what might be contributing to their feelings."
+                )
+            else:
+                user_prompt = (
+                    "The user's input is unclear. Ask them open-ended questions to explore how they're feeling or what they'd like to discuss."
+                )
         else:
             user_prompt = (
-                f"The user feels {sentiment} and experiences {emotion} about {topic if topic != 'Unknown' else 'a situation'}. "
+                f"The user feels {sentiment} and experiences {emotion} about {topic}. "
                 "Respond empathetically and ask open-ended questions to help them explore their feelings further."
             )
 
@@ -168,7 +181,6 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
         ]
     )
     return response["choices"][0]["message"]["content"]
-
 
 # Streamlit App Configuration
 st.set_page_config(
