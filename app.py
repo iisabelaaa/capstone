@@ -64,10 +64,17 @@ def classify_sentiment_and_emotion(user_input):
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
-    if "support" in user_input.lower() and "strategy" not in user_input.lower():
+    # Handle unknown classifications (stage -1)
+    if conversation_stage == -1:
         prompt = (
-            f"The user has indicated they don't want strategies and just need support. They feel {emotion} and {sentiment} about {topic}. "
-            "Respond with empathetic and understanding statements. Acknowledge their feelings, validate their emotions, and focus on being a supportive presence."
+            "The classification of the user's input was unclear. Respond as though you're introducing yourself, "
+            "and gently ask the user to share more about their feelings or the situation they’re facing."
+        )
+    # Handle support-only requests (stage -2)
+    elif conversation_stage == -2:
+        prompt = (
+            "The user has indicated they want emotional support without strategies. Respond empathetically, "
+            "validate their feelings, and focus on being a comforting presence without suggesting solutions."
         )
     elif conversation_stage == 0:
         prompt = (
@@ -84,13 +91,13 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
         )
     elif conversation_stage == 3:
         prompt = (
-            f"The user is feeling {emotion} and {sentiment} about {topic}. They mentioned specific concerns. Suggest actionable CBT and mindfulness "
-            "techniques, such as thought challenging, reframing, or small preparation steps. Offer examples if needed."
+            f"The user is feeling {emotion} and {sentiment} about {topic}. They mentioned specific concerns. Suggest actionable CBT techniques, "
+            "such as thought challenging, reframing, or small preparation steps. Offer examples if needed."
         )
     elif conversation_stage == 4:
         prompt = (
-            f"The user is feeling {emotion} and {sentiment} about {topic}. They want detailed guidance on applying CBT and mindfulness techniques. "
-            "Explain how to use the methods step by step, like thought records, exposure tasks, or mindfulness exercises. Provide clear examples."
+            f"The user is feeling {emotion} and {sentiment} about {topic}. They want detailed guidance on applying CBT techniques. "
+            "Explain how to use CBT methods step by step, like thought records, exposure tasks, or mindfulness exercises. Provide clear examples."
         )
     elif conversation_stage == 5:
         prompt = (
@@ -112,6 +119,8 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     return response["choices"][0]["message"]["content"]
 
 
+
+
 # Streamlit App Configuration
 st.set_page_config(
     page_title="Anxiety Support Chatbot",
@@ -122,13 +131,12 @@ st.set_page_config(
 st.title("Anxiety Support Chatbot")
 
 def main():
-
     # Initialize session state
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "conversation_stage" not in st.session_state:
         st.session_state.conversation_stage = 0
-    
+
     st.markdown(":gray[_*Type 'end session' anytime to close the conversation._]")
 
     # Display conversation history
@@ -157,46 +165,34 @@ def main():
         with st.chat_message("user", avatar="https://github.com/iisabelaaa/capstone/raw/main/user.png"):
             st.markdown(prompt)
 
-        # Attempt to classify user input
         try:
+            # Classify the user input
             topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
 
-            # Check for support-only requests
+            # Set conversation stage for support-only request
             if "support" in prompt.lower() and "strategy" not in prompt.lower():
-                st.session_state.conversation_stage = -1  # Special stage for support
-
-            # Handle unknowns
-            if topic == "Unknown" or sentiment == "Unknown" or emotion == "Unknown":
-                clarification = (
-                    "Thank you for sharing. Could you tell me more about how you're feeling or the situation you'd like to discuss?"
-                )
-                with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
-                    st.markdown(clarification)
-                st.session_state.messages.append({"role": "assistant", "content": clarification})
-                st.session_state.conversation_stage = 0
+                st.session_state.conversation_stage = -2
+            # Set conversation stage for unknown classifications
+            elif topic == "Unknown" or sentiment == "Unknown" or emotion == "Unknown":
+                st.session_state.conversation_stage = -1
             else:
-                if st.session_state.conversation_stage == -1:
-                    assistant_response = generate_therapeutic_response(
-                        prompt, topic, sentiment, emotion, st.session_state.conversation_stage
-                    )
-                elif st.session_state.conversation_stage >= 5 and "more" in prompt.lower():
-                    st.session_state.conversation_stage = 3  # Redirect to strategies stage
-                elif st.session_state.conversation_stage >= 5 and "new topic" in prompt.lower():
-                    st.session_state.conversation_stage = 1  # Redirect to exploration stage
-                else:
-                    st.session_state.conversation_stage += 1
+                # Increment the conversation stage normally
+                st.session_state.conversation_stage += 1
 
-                assistant_response = generate_therapeutic_response(
-                    prompt, topic, sentiment, emotion, st.session_state.conversation_stage
-                )
-                with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
-                    st.markdown(assistant_response)
+            # Generate the response
+            assistant_response = generate_therapeutic_response(
+                prompt, topic, sentiment, emotion, st.session_state.conversation_stage
+            )
 
-                st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+            with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
+                st.markdown(assistant_response)
+
+            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
         except Exception as e:
             with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
                 st.error(f"An error occurred: {e}")
+
 # Daisy Footer
 footer = """
 <style>
