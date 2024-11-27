@@ -85,11 +85,11 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
 
     # Handle stage -1: Unknown classifications
     if conversation_stage == -1:
-    user_prompt = (
-        "The user's input is unclear. All classifications (topic, sentiment, and emotion) are unknown. "
-        "Greet them warmly and encourage them to share more details about their thoughts or feelings. "
-        "Avoid making assumptions and focus on open-ended questions to help them elaborate."
-    )
+        user_prompt = (
+            "The user's input is unclear. All classifications (topic, sentiment, and emotion) are unknown. "
+            "Greet them warmly and encourage them to share more details about their thoughts or feelings. "
+            "Avoid making assumptions and focus on open-ended questions to help them elaborate."
+        )
 
     # Handle stage -2: Support-only requests
     elif conversation_stage == -2:
