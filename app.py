@@ -64,13 +64,12 @@ def classify_sentiment_and_emotion(user_input):
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
-    # Handle unknown classifications (stage -1)
+    # Handle stage -1 for unknown classifications
     if conversation_stage == -1:
         prompt = (
-            "The classification of the user's input was unclear. Respond as though you're introducing yourself, "
-            "and gently ask the user to share more about their feelings or the situation they’re facing."
+            "The classification of the user's input was unclear. Greet them warmly and encourage them to share more about their feelings "
+            "or what’s on their mind. Avoid making any assumptions."
         )
-    # Handle support-only requests (stage -2)
     elif conversation_stage == -2:
         prompt = (
             "The user has indicated they want emotional support without strategies. Respond empathetically, "
@@ -117,6 +116,7 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
         ]
     )
     return response["choices"][0]["message"]["content"]
+
 
 
 
@@ -169,12 +169,12 @@ def main():
             # Classify the user input
             topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
 
-            # Set conversation stage for support-only request
-            if "support" in prompt.lower() and "strategy" not in prompt.lower():
-                st.session_state.conversation_stage = -2
-            # Set conversation stage for unknown classifications
-            elif topic == "Unknown" or sentiment == "Unknown" or emotion == "Unknown":
+            # Check if all classifications are unknown
+            if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
                 st.session_state.conversation_stage = -1
+            # Set conversation stage for support-only request
+            elif "support" in prompt.lower() and "strategy" not in prompt.lower():
+                st.session_state.conversation_stage = -2
             else:
                 # Increment the conversation stage normally
                 st.session_state.conversation_stage += 1
@@ -192,6 +192,7 @@ def main():
         except Exception as e:
             with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
                 st.error(f"An error occurred: {e}")
+
 
 # Daisy Footer
 footer = """
