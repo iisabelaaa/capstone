@@ -36,7 +36,7 @@ for model in [topic_model, sentiment_model, emotion_model]:
 def classify_sentiment_and_emotion(user_input):
     """
     Classifies the input for topic, sentiment, and emotion.
-    Handles borderline confidence explicitly for cautious responses.
+    Returns identified values with basic confidence checks.
     """
     try:
         # Tokenize input for models
@@ -46,44 +46,37 @@ def classify_sentiment_and_emotion(user_input):
             # Predict topic
             topic_logits = topic_model(**inputs).logits
             topic_probs = torch.softmax(topic_logits, dim=-1).cpu().numpy()
-            topic_confidence = max(topic_probs[0])  # Highest probability for topic
             topic_idx = torch.argmax(topic_logits, dim=-1).item()
-            topic = topic_labels.get(str(topic_idx), "Unknown")
+            topic_confidence = max(topic_probs[0])
+            topic = topic_labels.get(str(topic_idx), "Unknown") if topic_confidence > 0.5 else "Unknown"
 
             # Predict sentiment
             sentiment_logits = sentiment_model(**inputs).logits
             sentiment_probs = torch.softmax(sentiment_logits, dim=-1).cpu().numpy()
-            sentiment_confidence = max(sentiment_probs[0])  # Highest probability for sentiment
             sentiment_idx = torch.argmax(sentiment_logits, dim=-1).item()
-            sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown")
+            sentiment_confidence = max(sentiment_probs[0])
+            sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown") if sentiment_confidence > 0.5 else "Unknown"
 
             # Predict emotion
             emotion_logits = emotion_model(**inputs).logits
             emotion_probs = torch.softmax(emotion_logits, dim=-1).cpu().numpy()
-            emotion_confidence = max(emotion_probs[0])  # Highest probability for emotion
             emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
-            emotion = emotion_labels.get(str(emotion_idx), "Unknown")
+            emotion_confidence = max(emotion_probs[0])
+            emotion = emotion_labels.get(str(emotion_idx), "Unknown") if emotion_confidence > 0.5 else "Unknown"
 
-        # Flag borderline confidence levels
-        borderline_topic = topic_confidence < 0.7
-        borderline_emotion = emotion_confidence < 0.7
-
-        # Debugging: Write classifications and confidences
+        # Debugging: Write classifications
         st.sidebar.write(
             f"Debug → Topic: {topic} (Confidence: {topic_confidence:.2f}), "
             f"Sentiment: {sentiment} (Confidence: {sentiment_confidence:.2f}), "
-            f"Emotion: {emotion} (Confidence: {emotion_confidence:.2f}), "
-            f"Borderline Topic: {borderline_topic}, Borderline Emotion: {borderline_emotion}"
+            f"Emotion: {emotion} (Confidence: {emotion_confidence:.2f})"
         )
 
-        return topic, sentiment, emotion, borderline_topic, borderline_emotion
+        return topic, sentiment, emotion
 
     except Exception as e:
-        # Log error for debugging
+        # Handle errors
         st.sidebar.write(f"Classification Error: {e}")
-        return "Unknown", "Unknown", "Unknown", True, True  # Fallback for errors
-
-
+        return "Unknown", "Unknown", "Unknown"
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
@@ -110,17 +103,17 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
             "The user is starting the conversation. Greet them warmly, thank them for reaching out, and encourage them to share more about their feelings or thoughts."
         )
 
-        # Handle stage 1: Exploring the user's feelings
+    # Handle stage 1: Exploring the user's feelings
     elif conversation_stage == 1:
-        if borderline_topic:
+        if topic == "Unknown" and emotion == "Unknown" and sentiment != "Unknown":
             user_prompt = (
-                f"The user feels {sentiment}. The specific topic isn't entirely clear, but they may be experiencing {emotion}. "
-                "Respond empathetically and ask open-ended questions to explore their feelings and identify any underlying concerns."
+                f"The user feels {sentiment}, but the specific topic and emotion are unclear. "
+                "Encourage them to share more about what they're experiencing or thinking about."
             )
-        elif borderline_emotion:
+        elif topic == "Unknown" and emotion != "Unknown" and sentiment != "Unknown":
             user_prompt = (
-                f"The user feels {sentiment} and mentions {topic}. The exact emotion isn't entirely clear. "
-                "Respond empathetically and gently probe to understand the intensity and context of their emotions."
+                f"The user feels {sentiment} and is experiencing {emotion}, but the topic is unclear. "
+                "Ask open-ended questions to explore what might be causing these feelings."
             )
         else:
             user_prompt = (
@@ -187,7 +180,6 @@ st.set_page_config(
 st.title("Anxiety Support Chatbot")
 
 def main():
-    # Initialize session state
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "conversation_stage" not in st.session_state:
@@ -204,73 +196,40 @@ def main():
             if role == "user"
             else "https://github.com/iisabelaaa/capstone/raw/main/assistant.png"
         )
-
         with st.chat_message(role, avatar=avatar_url):
             st.markdown(content)
 
-    # User input and response logic
     if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
         if prompt.strip().lower() == "end session":
             st.session_state.clear()
             st.session_state.messages = []
-            st.session_state.conversation_stage = 0
             st.success("Session ended. Feel free to start a new conversation!")
             return
 
-        # Append user message to session
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar="https://github.com/iisabelaaa/capstone/raw/main/user.png"):
             st.markdown(prompt)
 
-        # Initialize variables to prevent "undefined" errors
-        topic = "Unknown"
-        sentiment = "Unknown"
-        emotion = "Unknown"
+        # Classify user input
+        topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
 
-        try:
-            # Classify the user input
-            topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
+        # Adjust conversation stage
+        if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
+            st.session_state.conversation_stage = -1
+        elif st.session_state.conversation_stage == 0:
+            st.session_state.conversation_stage = 1
+        else:
+            st.session_state.conversation_stage += 1
 
-            # Debugging: Write classifications to sidebar
-            st.sidebar.write(f"Debug → Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
+        # Generate response
+        assistant_response = generate_therapeutic_response(
+            prompt, topic, sentiment, emotion, st.session_state.conversation_stage
+        )
 
-            # Handle generic greetings
-            if topic == "Generic Greeting":
-                assistant_response = "Hi there! How can I help you today? Feel free to share what’s on your mind."
-                st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-                with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
-                    st.markdown(assistant_response)
-                return
+        with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
+            st.markdown(assistant_response)
 
-            # Check if all classifications are unknown
-            if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
-                st.session_state.conversation_stage = -1  # Stay in "unknown" stage
-            elif st.session_state.conversation_stage == 0:
-                st.session_state.conversation_stage = 1  # Move to stage 1 after initial input
-            else:
-                st.session_state.conversation_stage += 1  # Progress normally for other stages
-
-            # Generate the response
-            assistant_response = generate_therapeutic_response(
-                prompt, topic, sentiment, emotion, st.session_state.conversation_stage
-            )
-
-            with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
-                st.markdown(assistant_response)
-
-            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-
-        except Exception as e:
-            # Log error and ensure variables are handled
-            st.error(f"An error occurred: {e}")
-            st.sidebar.write(f"Error Debugging: {e}")
-
-            # Fallback response for error handling
-            assistant_response = "I encountered an issue while processing your input. Could you please try rephrasing or sharing more details?"
-            with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
-                st.markdown(assistant_response)
-
-            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+        st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
 
 footer = """
