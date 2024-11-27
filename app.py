@@ -119,7 +119,6 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
                 if emotion == "Unknown" or emotion == "Neutral":
                     user_prompt = (
                         f"The user feels {sentiment}, but their specific emotions are unclear or neutral. "
-                        "Acknowledge their sentiment and ask open-ended questions to help them explore what might be contributing to their feelings. "
                         "Encourage them to share more about their thoughts, experiences, or any particular situations they’ve been facing."
                     )
                 else:
