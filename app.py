@@ -35,7 +35,8 @@ for model in [topic_model, sentiment_model, emotion_model]:
 
 def classify_sentiment_and_emotion(user_input):
     """
-    Classifies the input for topic, sentiment, and emotion with handling for overconfidence in irrelevant inputs.
+    Classifies the input for topic, sentiment, and emotion.
+    Handles borderline confidence explicitly for cautious responses.
     """
     try:
         # Tokenize input for models
@@ -47,39 +48,41 @@ def classify_sentiment_and_emotion(user_input):
             topic_probs = torch.softmax(topic_logits, dim=-1).cpu().numpy()
             topic_confidence = max(topic_probs[0])  # Highest probability for topic
             topic_idx = torch.argmax(topic_logits, dim=-1).item()
-            topic = topic_labels.get(str(topic_idx), "Unknown") if topic_confidence > 0.5 else "Unknown"
+            topic = topic_labels.get(str(topic_idx), "Unknown")
 
             # Predict sentiment
             sentiment_logits = sentiment_model(**inputs).logits
             sentiment_probs = torch.softmax(sentiment_logits, dim=-1).cpu().numpy()
             sentiment_confidence = max(sentiment_probs[0])  # Highest probability for sentiment
             sentiment_idx = torch.argmax(sentiment_logits, dim=-1).item()
-            sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown") if sentiment_confidence > 0.5 else "Unknown"
+            sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown")
 
             # Predict emotion
             emotion_logits = emotion_model(**inputs).logits
             emotion_probs = torch.softmax(emotion_logits, dim=-1).cpu().numpy()
             emotion_confidence = max(emotion_probs[0])  # Highest probability for emotion
             emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
-            emotion = emotion_labels.get(str(emotion_idx), "Unknown") if emotion_confidence > 0.5 else "Unknown"
+            emotion = emotion_labels.get(str(emotion_idx), "Unknown")
 
-        # Handle low topic confidence or conflicting results
-        if topic_confidence < 0.3 or (topic == "Unknown" and sentiment_confidence < 0.6 and emotion_confidence < 0.6):
-            topic, sentiment, emotion = "Unknown", "Unknown", "Unknown"
+        # Flag borderline confidence levels
+        borderline_topic = topic_confidence < 0.7
+        borderline_emotion = emotion_confidence < 0.7
 
         # Debugging: Write classifications and confidences
         st.sidebar.write(
             f"Debug → Topic: {topic} (Confidence: {topic_confidence:.2f}), "
             f"Sentiment: {sentiment} (Confidence: {sentiment_confidence:.2f}), "
-            f"Emotion: {emotion} (Confidence: {emotion_confidence:.2f})"
+            f"Emotion: {emotion} (Confidence: {emotion_confidence:.2f}), "
+            f"Borderline Topic: {borderline_topic}, Borderline Emotion: {borderline_emotion}"
         )
 
-        return topic, sentiment, emotion
+        return topic, sentiment, emotion, borderline_topic, borderline_emotion
 
     except Exception as e:
         # Log error for debugging
         st.sidebar.write(f"Classification Error: {e}")
-        return "Unknown", "Unknown", "Unknown"  # Fallback for errors
+        return "Unknown", "Unknown", "Unknown", True, True  # Fallback for errors
+
 
 
 
@@ -107,12 +110,23 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
             "The user is starting the conversation. Greet them warmly, thank them for reaching out, and encourage them to share more about their feelings or thoughts."
         )
 
-    # Handle stage 1: Exploring the user's feelings
+        # Handle stage 1: Exploring the user's feelings
     elif conversation_stage == 1:
-        user_prompt = (
-            f"The user feels {sentiment} and experiences {emotion} about {topic if topic != 'Unknown' else 'a situation'}. "
-            "Respond empathetically and ask open-ended questions to help them explore their feelings further."
-        )
+        if borderline_topic:
+            user_prompt = (
+                f"The user feels {sentiment}. The specific topic isn't entirely clear, but they may be experiencing {emotion}. "
+                "Respond empathetically and ask open-ended questions to explore their feelings and identify any underlying concerns."
+            )
+        elif borderline_emotion:
+            user_prompt = (
+                f"The user feels {sentiment} and mentions {topic}. The exact emotion isn't entirely clear. "
+                "Respond empathetically and gently probe to understand the intensity and context of their emotions."
+            )
+        else:
+            user_prompt = (
+                f"The user feels {sentiment} and experiences {emotion} about {topic if topic != 'Unknown' else 'a situation'}. "
+                "Respond empathetically and ask open-ended questions to help them explore their feelings further."
+            )
 
     # Handle stage 2: Identifying triggers and stressors
     elif conversation_stage == 2:
@@ -230,9 +244,11 @@ def main():
 
             # Check if all classifications are unknown
             if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
-                st.session_state.conversation_stage = -1
+                st.session_state.conversation_stage = -1  # Stay in "unknown" stage
+            elif st.session_state.conversation_stage == 0:
+                st.session_state.conversation_stage = 1  # Move to stage 1 after initial input
             else:
-                st.session_state.conversation_stage += 1
+                st.session_state.conversation_stage += 1  # Progress normally for other stages
 
             # Generate the response
             assistant_response = generate_therapeutic_response(
