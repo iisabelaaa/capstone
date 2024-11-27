@@ -115,29 +115,43 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     # Handle stage 1: Exploring the user's feelings
     elif conversation_stage == 1:
         if topic == "Unknown":
-            if sentiment != "Unknown" and emotion != "Unknown":
+            if sentiment != "Unknown":
+                if emotion == "Unknown" or emotion == "Neutral":
+                    user_prompt = (
+                        f"The user feels {sentiment}, but their specific emotions are unclear or neutral. "
+                        "Acknowledge their sentiment and ask open-ended questions to help them explore what might be contributing to their feelings. "
+                        "Encourage them to share more about their thoughts, experiences, or any particular situations they’ve been facing."
+                    )
+                else:
+                    user_prompt = (
+                        f"The user feels {sentiment} and experiences {emotion}, but the specific topic is unclear. "
+                        "Acknowledge their emotions and encourage them to elaborate on what might be contributing to these feelings. "
+                        "Ask open-ended questions to explore their thoughts or any specific situations they’d like to discuss."
+                    )
+            elif emotion != "Unknown":
                 user_prompt = (
-                    f"The user feels {sentiment} and experiences {emotion}, but the specific topic is unclear. "
-                    "Acknowledge their emotions and encourage them to elaborate on what might be contributing to these feelings. "
-                    "Ask open-ended questions to explore their thoughts or any specific situations they’d like to discuss."
-                )
-            elif sentiment != "Unknown":
-                user_prompt = (
-                    f"The user feels {sentiment}, but the topic and specific emotions are unclear. "
-                    "Validate their sentiment and gently encourage them to share more about what's on their mind or what's been happening."
+                    f"The user experiences {emotion}, but their sentiment and the specific topic are unclear. "
+                    "Validate their emotion and ask open-ended questions to help them share more about their current state or concerns."
                 )
             else:
                 user_prompt = (
                     "The topic, sentiment, and emotion are mostly unclear, but the user may need support. "
                     "Ask open-ended questions to explore their feelings or encourage them to share what’s been on their mind."
                 )
-        else:
-            user_prompt = (
-                f"The user feels {sentiment} and experiences {emotion} about {topic}. "
-                "Acknowledge their context and ask questions to help them explore their feelings more deeply. "
-                "Encourage them to share specific aspects of the topic that might be contributing to their emotions."
-            )
+        else:  # Topic is known
+            if sentiment != "Unknown" and (emotion == "Unknown" or emotion == "Neutral"):
+                user_prompt = (
+                    f"The user feels {sentiment} about {topic}, but their emotions are unclear or neutral. "
+                    "Acknowledge their sentiment and encourage them to share more about what’s on their mind or how this topic is affecting them."
+                )
+            else:
+                user_prompt = (
+                    f"The user feels {sentiment} and experiences {emotion} about {topic}. "
+                    "Acknowledge their context and ask questions to help them explore their feelings more deeply. "
+                    "Encourage them to share specific aspects of the topic that might be contributing to their emotions."
+                )
 
+    
     # Handle stage 2: Identifying triggers and stressors
     elif conversation_stage == 2:
         user_prompt = (
