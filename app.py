@@ -78,6 +78,10 @@ def classify_sentiment_and_emotion(user_input):
         st.sidebar.write(f"Classification Error: {e}")
         return "Unknown", "Unknown", "Unknown"
 
+def is_greeting(user_input):
+    greetings = ["hello", "hi", "hey", "greetings", "what's up", "howdy", "sup"]
+    return user_input.strip().lower() in greetings
+
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
     # Base system message
@@ -228,32 +232,67 @@ def main():
             st.markdown(content)
 
     if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
-        if prompt.strip().lower() == "end session":
-            st.session_state.clear()
-            st.session_state.messages = []
-            st.success("Session ended. Feel free to start a new conversation!")
-            return
+    if prompt.strip().lower() == "end session":
+        st.session_state.clear()
+        st.session_state.messages = []
+        st.session_state.conversation_stage = 0
+        st.success("Session ended. Feel free to start a new conversation!")
+        return
 
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar="https://github.com/iisabelaaa/capstone/raw/main/user.png"):
-            st.markdown(prompt)
+    # Check if the user input is a greeting
+    if is_greeting(prompt):
+        st.session_state.conversation_stage = 0  # Set conversation stage to 0 for greetings
+        assistant_response = (
+            "Hello! It's great to see you here. Feel free to share how you're feeling or what's been on your mind. "
+            "I'm here to listen and support you."
+        )
+        st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+        with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
+            st.markdown(assistant_response)
+        return  # Skip classification for greetings
 
-        # Classify user input
+    # Append user message to session
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user", avatar="https://github.com/iisabelaaa/capstone/raw/main/user.png"):
+        st.markdown(prompt)
+
+    # Initialize variables to prevent "undefined" errors
+    topic = "Unknown"
+    sentiment = "Unknown"
+    emotion = "Unknown"
+
+    try:
+        # Classify the user input
         topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
 
-        # Adjust conversation stage
-        if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
-            st.session_state.conversation_stage = -1
-        elif st.session_state.conversation_stage == 0:
-            st.session_state.conversation_stage = 1
-        else:
-            st.session_state.conversation_stage += 1
+        # Debugging: Write classifications to sidebar
+        st.sidebar.write(f"Debug → Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
 
-        # Generate response
+        # Check if all classifications are unknown
+        if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
+            st.session_state.conversation_stage = -1  # Stay in "unknown" stage
+        elif st.session_state.conversation_stage == 0:
+            st.session_state.conversation_stage = 1  # Move to stage 1 after initial input
+        else:
+            st.session_state.conversation_stage += 1  # Progress normally for other stages
+
+        # Generate the response
         assistant_response = generate_therapeutic_response(
             prompt, topic, sentiment, emotion, st.session_state.conversation_stage
         )
 
+        with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
+            st.markdown(assistant_response)
+
+        st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+    except Exception as e:
+        # Log error and ensure variables are handled
+        st.error(f"An error occurred: {e}")
+        st.sidebar.write(f"Error Debugging: {e}")
+
+        # Fallback response for error handling
+        assistant_response = "I encountered an issue while processing your input. Could you please try rephrasing or sharing more details?"
         with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
             st.markdown(assistant_response)
 
