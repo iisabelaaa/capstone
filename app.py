@@ -35,8 +35,7 @@ for model in [topic_model, sentiment_model, emotion_model]:
 
 def classify_sentiment_and_emotion(user_input):
     """
-    Classifies the input for topic, sentiment, and emotion.
-    Handles generic greetings explicitly as "Generic Greeting".
+    Classifies the input for topic, sentiment, and emotion with handling for overconfidence in irrelevant inputs.
     """
     try:
         # Tokenize input for models
@@ -64,9 +63,9 @@ def classify_sentiment_and_emotion(user_input):
             emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
             emotion = emotion_labels.get(str(emotion_idx), "Unknown") if emotion_confidence > 0.5 else "Unknown"
 
-        # Handle generic greeting explicitly
-        if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown" and len(user_input.split()) < 3:
-            return "Generic Greeting", "neutral", "neutral"
+        # Handle low topic confidence or conflicting results
+        if topic_confidence < 0.3 or (topic == "Unknown" and sentiment_confidence < 0.6 and emotion_confidence < 0.6):
+            topic, sentiment, emotion = "Unknown", "Unknown", "Unknown"
 
         # Debugging: Write classifications and confidences
         st.sidebar.write(
@@ -78,8 +77,10 @@ def classify_sentiment_and_emotion(user_input):
         return topic, sentiment, emotion
 
     except Exception as e:
+        # Log error for debugging
         st.sidebar.write(f"Classification Error: {e}")
         return "Unknown", "Unknown", "Unknown"  # Fallback for errors
+
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
