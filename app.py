@@ -174,9 +174,15 @@ def main():
             st.success("Session ended. Feel free to start a new conversation!")
             return
 
+        # Append user message to session
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar="https://github.com/iisabelaaa/capstone/raw/main/user.png"):
             st.markdown(prompt)
+
+        # Initialize variables to prevent "undefined" errors
+        topic = "Unknown"
+        sentiment = "Unknown"
+        emotion = "Unknown"
 
         try:
             # Check if input is relevant
@@ -206,7 +212,17 @@ def main():
             st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
         except Exception as e:
+            # Log error and ensure variables are handled
             st.error(f"An error occurred: {e}")
+            st.sidebar.write(f"Error Debugging: {e}")
+
+            # Fallback response for error handling
+            assistant_response = "I encountered an issue while processing your input. Could you please try rephrasing or sharing more details?"
+            with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
+                st.markdown(assistant_response)
+
+            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
 
 
 footer = """
