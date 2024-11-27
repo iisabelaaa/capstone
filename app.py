@@ -66,16 +66,14 @@ def classify_sentiment_and_emotion(user_input):
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
     # Handle stage -1 for unknown classifications
     if conversation_stage == -1:
-        prompt = (
-            "The classification of the user's input was unclear. Greet them warmly and encourage them to share more about their feelings "
-            "or what’s on their mind. Avoid making any assumptions."
-        )
-    elif conversation_stage == -2:
-        prompt = (
-            "The user has indicated they want emotional support without strategies. Respond empathetically, "
-            "validate their feelings, and focus on being a comforting presence without suggesting solutions."
-        )
-    elif conversation_stage == 0:
+        return "Hi there! Could you share more about how you're feeling or what’s been on your mind? I’d love to understand more so I can support you better."
+
+    # Handle stage -2 for support-only requests
+    if conversation_stage == -2:
+        return "Thank you for sharing how you're feeling. It’s okay to need support without wanting advice right now. I’m here to listen and be with you in this moment. Can you share more about what’s on your mind?"
+
+    # Normal conversation stages
+    if conversation_stage == 0:
         prompt = (
             "The user is starting the conversation. Greet them warmly and encourage them to share their thoughts and feelings."
         )
@@ -121,6 +119,7 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
 
 
 
+
 # Streamlit App Configuration
 st.set_page_config(
     page_title="Anxiety Support Chatbot",
@@ -157,7 +156,6 @@ def main():
         if prompt.strip().lower() == "end session":
             st.session_state.clear()
             st.session_state.messages = []
-            st.session_state.conversation_stage = 0
             st.success("Session ended. Feel free to start a new conversation!")
             return
 
@@ -172,7 +170,7 @@ def main():
             # Check if all classifications are unknown
             if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
                 st.session_state.conversation_stage = -1
-            # Set conversation stage for support-only request
+            # Support-only request
             elif "support" in prompt.lower() and "strategy" not in prompt.lower():
                 st.session_state.conversation_stage = -2
             else:
@@ -192,6 +190,7 @@ def main():
         except Exception as e:
             with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
                 st.error(f"An error occurred: {e}")
+
 
 
 # Daisy Footer
