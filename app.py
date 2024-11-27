@@ -124,7 +124,6 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
                 else:
                     user_prompt = (
                         f"The user feels {sentiment} and experiences {emotion}, but the specific topic is unclear. "
-                        "Acknowledge their emotions and encourage them to elaborate on what might be contributing to these feelings. "
                         "Ask open-ended questions to explore their thoughts or any specific situations they’d like to discuss."
                     )
             elif emotion != "Unknown":
@@ -141,7 +140,7 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
             if sentiment != "Unknown" and (emotion == "Unknown" or emotion == "Neutral"):
                 user_prompt = (
                     f"The user feels {sentiment} about {topic}, but their emotions are unclear or neutral. "
-                    "Acknowledge their sentiment and encourage them to share more about what’s on their mind or how this topic is affecting them."
+                    "Encourage them to share more about what’s on their mind or how this topic is affecting them."
                 )
             else:
                 user_prompt = (
