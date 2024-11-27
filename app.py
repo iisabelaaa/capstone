@@ -37,29 +37,40 @@ def classify_sentiment_and_emotion(user_input):
     try:
         # Tokenize input
         inputs = tokenizer(user_input, return_tensors="pt", truncation=True, padding=True, max_length=128).to(device)
+
         with torch.no_grad():
             # Predict topic
             topic_logits = topic_model(**inputs).logits
+            topic_probs = torch.softmax(topic_logits, dim=-1).cpu().numpy()
+            topic_confidence = max(topic_probs[0])  # Highest probability
             topic_idx = torch.argmax(topic_logits, dim=-1).item()
-            topic = topic_labels.get(str(topic_idx), "Unknown")
+            topic = topic_labels.get(str(topic_idx), "Unknown") if topic_confidence > 0.5 else "Unknown"  # Threshold
 
             # Predict sentiment
             sentiment_logits = sentiment_model(**inputs).logits
+            sentiment_probs = torch.softmax(sentiment_logits, dim=-1).cpu().numpy()
+            sentiment_confidence = max(sentiment_probs[0])  # Highest probability
             sentiment_idx = torch.argmax(sentiment_logits, dim=-1).item()
-            sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown")
+            sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown") if sentiment_confidence > 0.5 else "Unknown"  # Threshold
 
             # Predict emotion
             emotion_logits = emotion_model(**inputs).logits
+            emotion_probs = torch.softmax(emotion_logits, dim=-1).cpu().numpy()
+            emotion_confidence = max(emotion_probs[0])  # Highest probability
             emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
-            emotion = emotion_labels.get(str(emotion_idx), "Unknown")
+            emotion = emotion_labels.get(str(emotion_idx), "Unknown") if emotion_confidence > 0.5 else "Unknown"  # Threshold
 
-        # Debugging: Display classifications in the app
-        st.write(f"Debug -> Topic: {topic}, Sentiment: {sentiment}, Emotion: {emotion}")
+        # Debugging: Display classifications and confidences
+        st.write(f"Debug → Topic: {topic} (Confidence: {topic_confidence:.2f}), "
+                         f"Sentiment: {sentiment} (Confidence: {sentiment_confidence:.2f}), "
+                         f"Emotion: {emotion} (Confidence: {emotion_confidence:.2f})")
 
         return topic, sentiment, emotion
-    except Exception:
-        # If any error occurs, default to "Unknown"
+    except Exception as e:
+        st.write(f"Classification Error: {e}")
+        # Fallback to "Unknown"
         return "Unknown", "Unknown", "Unknown"
+
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
