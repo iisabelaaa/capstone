@@ -205,8 +205,15 @@ st.set_page_config(
 st.title("Anxiety Support Chatbot")
 
 def main():
+    # Initialize session state variables
     if "messages" not in st.session_state:
         st.session_state.messages = []
+        # Add the initial assistant message
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": "Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"
+        })
+
     if "conversation_stage" not in st.session_state:
         st.session_state.conversation_stage = 0
 
@@ -224,13 +231,18 @@ def main():
         with st.chat_message(role, avatar=avatar_url):
             st.markdown(content)
 
-    if prompt := st.chat_input("Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"):
-        if prompt.strip().lower() == "end session":
-            st.session_state.clear()
-            st.session_state.messages = []
-            st.session_state.conversation_stage = 0
-            st.success("Session ended. Feel free to start a new conversation!")
-            return
+    # Handle user input with validation
+    prompt = st.chat_input("Type here...")
+    if prompt is None or prompt.strip() == "":
+        return  # Do nothing if no input is provided
+
+    # Check for session end command
+    if prompt.strip().lower() == "end session":
+        st.session_state.clear()
+        st.session_state.messages = []
+        st.session_state.conversation_stage = 0
+        st.success("Session ended. Feel free to start a new conversation!")
+        return
 
     # Check if the user input is a greeting
     if is_greeting(prompt):
@@ -286,7 +298,6 @@ def main():
             st.markdown(assistant_response)
 
         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-
 
 footer = """
 <style>
