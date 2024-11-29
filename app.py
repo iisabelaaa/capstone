@@ -187,7 +187,7 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
 
     # Generate the response using OpenAI
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="ft:gpt-3.5-turbo-0125:personal::AYvfotKM",
         messages=[
             {"role": "system", "content": system_message},
             {"role": "user", "content": f"The user said: {user_input}. {user_prompt}"}
