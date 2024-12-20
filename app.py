@@ -76,9 +76,9 @@ def is_greeting(user_input):
     return user_input.strip().lower() in greetings
 
 
-def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
+def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage, conversation_history):
     """
-    Generate therapeutic responses based on conversation stage and classifications.
+    Generate therapeutic responses based on conversation stage, classifications, and conversation history.
     """
     # Base system message
     system_message = "You are a conversational and supportive therapeutic assistant specializing in anxiety support."
@@ -134,13 +134,15 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
             "Ask the user if they’d like to revisit any topics or explore new concerns."
         )
 
+    # Build the messages from conversation history
+    messages = [{"role": "system", "content": system_message}] + conversation_history + [
+        {"role": "user", "content": f"The user said: {user_input}. {user_prompt}"}
+    ]
+
     # Generate response using OpenAI
     response = openai.ChatCompletion.create(
         model="ft:gpt-3.5-turbo-0125:personal::AYvfotKM",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": f"The user said: {user_input}. {user_prompt}"}
-        ]
+        messages=messages
     )
 
     return response["choices"][0]["message"]["content"]
@@ -212,16 +214,11 @@ def main():
     with st.chat_message("user", avatar="https://github.com/iisabelaaa/capstone/raw/main/user.png"):
         st.markdown(prompt)
 
-    # Initialize variables to prevent "undefined" errors
-    topic = "Unknown"
-    sentiment = "Unknown"
-    emotion = "Unknown"
-
     try:
         # Classify the user input
         topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
 
-        # Check if all classifications are unknown
+        # Update conversation stage
         if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
             st.session_state.conversation_stage = -1  # Stay in "unknown" stage
         elif st.session_state.conversation_stage == 0:
@@ -229,11 +226,18 @@ def main():
         else:
             st.session_state.conversation_stage += 1  # Progress normally for other stages
 
-        # Generate the response
+        # Generate the response using conversation history
         assistant_response = generate_therapeutic_response(
-            prompt, topic, sentiment, emotion, st.session_state.conversation_stage
+            user_input=prompt,
+            topic=topic,
+            sentiment=sentiment,
+            emotion=emotion,
+            conversation_stage=st.session_state.conversation_stage,
+            conversation_history=st.session_state.messages  # Pass the entire message history
         )
 
+
+        # Display and append assistant response
         with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
             st.markdown(assistant_response)
 
@@ -249,6 +253,7 @@ def main():
             st.markdown(assistant_response)
 
         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
 
 footer = """
 <style>
