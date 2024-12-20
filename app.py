@@ -135,6 +135,12 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
             "Ask the user if they’d like to revisit any topics or explore new concerns."
         )
 
+    # Trim conversation history if it exceeds a safe number of turns
+    MAX_TURNS = 20  # Adjust this based on your expected conversation length
+    if len(conversation_history) > MAX_TURNS:
+        conversation_history = conversation_history[-MAX_TURNS:]  # Keep only the last 20 turns
+
+    
     # Build the messages from conversation history with summarization
     if len(conversation_history) > MAX_TURNS:
         conversation_history = conversation_history[-MAX_TURNS:]  # Trim the history if too long
