@@ -123,8 +123,9 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
     # Stage 5: Wrapping Up the Conversation
     elif conversation_stage == 5:
         user_prompt = (
-            f"The user has discussed their concerns about {topic}. Summarize the conversation, highlight their progress, "
-            "and provide encouragement. Ask if there’s anything else they’d like to discuss."
+            "The user has been discussing their concerns and feelings in this conversation. "
+            "Summarize the key points shared so far, acknowledge their progress, and reinforce any strategies or insights "
+            "discussed. Provide encouragement and ask if there's anything else they would like to explore before concluding."
         )
 
     # Handle Unknown Stages or Context
@@ -133,6 +134,15 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
             "Respond warmly and summarize the conversation so far. "
             "Ask the user if they’d like to revisit any topics or explore new concerns."
         )
+
+    # Build the messages from conversation history with summarization
+    if len(conversation_history) > MAX_TURNS:
+        conversation_history = conversation_history[-MAX_TURNS:]  # Trim the history if too long
+
+    history_summary = " ".join(
+        [f"{msg['role'].capitalize()}: {msg['content']}" for msg in conversation_history]
+    )
+
 
     # Build the messages from conversation history
     messages = [{"role": "system", "content": system_message}] + conversation_history + [
