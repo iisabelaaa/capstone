@@ -77,115 +77,64 @@ def is_greeting(user_input):
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage):
+    """
+    Generate therapeutic responses based on conversation stage and classifications.
+    """
     # Base system message
-    system_message = "You are a therapeutic assistant specializing in anxiety support."
+    system_message = "You are a conversational and supportive therapeutic assistant specializing in anxiety support."
 
-    # Handle stage -1: Unknown classifications
-    if conversation_stage == -1:
+    # Stage 0: Initial Greeting
+    if conversation_stage == 0:
         user_prompt = (
-            "The user's input is unclear. All classifications (topic, sentiment, and emotion) are unknown. "
-            "Greet them warmly and encourage them to share more details about their thoughts or feelings. "
-            "Avoid making assumptions and focus on open-ended questions to help them elaborate."
+            "The user has started the conversation. Greet them warmly and invite them to share their thoughts or feelings. "
+            "Focus on creating a safe and open environment."
         )
 
-    # Handle stage -2: Support-only requests
-    elif conversation_stage == -2:
-        user_prompt = (
-            "The user has expressed that they want emotional support without suggestions or strategies. "
-            "Respond empathetically, validate their feelings, and provide reassurance without offering advice."
-        )
-
-    # Handle gratitude for the bot (e.g., "Thanks for helping me")
-    elif emotion == "gratitude" and topic == "Unknown":
-        user_prompt = (
-            "The user has expressed gratitude, possibly towards the assistant. "
-            "Acknowledge their courage and progress in seeking support and addressing their concerns. "
-            "Encourage them to continue taking steps forward, and ask if there's anything else they'd like to discuss or explore further."
-        )
-
-    # Handle stage 0: Beginning the conversation
-    elif conversation_stage == 0:
-        user_prompt = (
-            "The user is starting the conversation. Greet them warmly, thank them for reaching out, and encourage them to share more about their feelings or thoughts."
-        )
-
-    # Handle stage 1: Exploring the user's feelings
+    # Stage 1: Exploring the User's Feelings
     elif conversation_stage == 1:
-        if topic == "Unknown":
-            if sentiment != "Unknown":
-                if emotion == "Unknown" or emotion == "neutral":
-                    user_prompt = (
-                        f"The user feels {sentiment}, but their specific emotions are unclear or neutral. "
-                        "Encourage them to share more about their thoughts, experiences, or any particular situations they’ve been facing."
-                    )
-                else:
-                    user_prompt = (
-                        f"The user feels {sentiment} and experiences {emotion}, but the specific topic is unclear. "
-                        "Ask open-ended questions to explore their thoughts or any specific situations they’d like to discuss."
-                    )
-            elif emotion != "Unknown":
-                user_prompt = (
-                    f"The user experiences {emotion}, but their sentiment and the specific topic are unclear. "
-                    "Validate their emotion and ask open-ended questions to help them share more about their current state or concerns."
-                )
-            else:
-                user_prompt = (
-                    "The topic, sentiment, and emotion are mostly unclear, but the user may need support. "
-                    "Ask open-ended questions to explore their feelings or encourage them to share what’s been on their mind."
-                )
-        else:  # Topic is known
-            if sentiment != "Unknown" and (emotion == "Unknown" or emotion == "Neutral"):
-                user_prompt = (
-                    f"The user feels {sentiment} about {topic}, but their emotions are unclear or neutral. "
-                    "Encourage them to share more about what’s on their mind or how this topic is affecting them."
-                )
-            else:
-                user_prompt = (
-                    f"The user feels {sentiment} and experiences {emotion} about {topic}. "
-                    "Acknowledge their context and ask questions to help them explore their feelings more deeply. "
-                    "Encourage them to share specific aspects of the topic that might be contributing to their emotions."
-                )
+        user_prompt = (
+            f"The user feels {sentiment} and is experiencing {emotion} about {topic}. "
+            "Acknowledge their feelings empathetically and ask an open-ended question to encourage further sharing."
+        )
 
-    
-    # Handle stage 2: Identifying triggers and stressors
+    # Stage 2: Identifying Stressors or Triggers
     elif conversation_stage == 2:
         user_prompt = (
             f"The user has shared feeling {sentiment} and experiencing {emotion} about {topic}. "
-            "Ask them to identify specific aspects causing their anxiety or stress. Focus on understanding their main triggers."
+            "Help them explore specific stressors or triggers that might be contributing to their feelings."
         )
 
-    # Handle stage 3: Introducing actionable techniques
+    # Stage 3: Offering Practical Strategies
     elif conversation_stage == 3:
         user_prompt = (
-            f"The user is feeling {sentiment} and experiencing {emotion} about {topic}. "
-            "Suggest actionable CBT techniques, such as thought challenging, reframing, or mindfulness exercises. "
-            "Validate their feelings and encourage them to try these techniques."
+            f"The user feels {sentiment} and experiences {emotion} about {topic}. "
+            "Introduce one practical CBT technique, such as thought reframing, grounding exercises, or journaling. "
+            "Keep the explanation simple and actionable."
         )
 
-    # Handle stage 4: Providing detailed guidance
+    # Stage 4: Providing Detailed Guidance
     elif conversation_stage == 4:
         user_prompt = (
-            f"The user feels {sentiment} and experiences {emotion} about {topic}. "
-            "Provide detailed guidance on using CBT techniques step by step, like thought records, exposure tasks, or journaling. "
-            "Offer specific examples where possible."
+            f"The user is feeling {sentiment} and experiencing {emotion} about {topic}. "
+            "Provide detailed guidance on using CBT techniques or mindfulness exercises step by step. "
+            "Offer specific examples where appropriate."
         )
 
-    # Handle stage 5: Wrapping up the conversation
+    # Stage 5: Wrapping Up the Conversation
     elif conversation_stage == 5:
         user_prompt = (
-            f"The user has discussed their concerns about {topic}. Summarize their key concerns and progress. "
-            "Reinforce their achievements, provide encouragement, and ask if there’s anything else they’d like to discuss. "
-            "If they request more strategies, redirect to earlier stages."
+            f"The user has discussed their concerns about {topic}. Summarize the conversation, highlight their progress, "
+            "and provide encouragement. Ask if there’s anything else they’d like to discuss."
         )
 
-    # Handle unknown stages
+    # Handle Unknown Stages or Context
     else:
         user_prompt = (
-            "Summarize the key points discussed, express encouragement, and ask if there’s anything else the user would like to talk about. "
-            "If they bring up a new topic, restart the conversation flow."
+            "Respond warmly and summarize the conversation so far. "
+            "Ask the user if they’d like to revisit any topics or explore new concerns."
         )
 
-    # Generate the response using OpenAI
+    # Generate response using OpenAI
     response = openai.ChatCompletion.create(
         model="ft:gpt-3.5-turbo-0125:personal::AYvfotKM",
         messages=[
@@ -193,7 +142,9 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
             {"role": "user", "content": f"The user said: {user_input}. {user_prompt}"}
         ]
     )
+
     return response["choices"][0]["message"]["content"]
+
 
 # Streamlit App Configuration
 st.set_page_config(
