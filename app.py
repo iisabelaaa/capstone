@@ -34,30 +34,25 @@ for model in [topic_model, sentiment_model, emotion_model]:
     model.to(device)
 
 def classify_sentiment_and_emotion(user_input):
-    """
-    Classifies the input for topic, sentiment, and emotion.
-    Returns identified values with basic confidence checks.
-    """
+
     try:
-        # Tokenize input for models
+
         inputs = tokenizer(user_input, return_tensors="pt", truncation=True, padding=True, max_length=128).to(device)
 
         with torch.no_grad():
-            # Predict topic
+
             topic_logits = topic_model(**inputs).logits
             topic_probs = torch.softmax(topic_logits, dim=-1).cpu().numpy()
             topic_idx = torch.argmax(topic_logits, dim=-1).item()
             topic_confidence = max(topic_probs[0])
             topic = topic_labels.get(str(topic_idx), "Unknown") if topic_confidence > 0.5 else "Unknown"
 
-            # Predict sentiment
             sentiment_logits = sentiment_model(**inputs).logits
             sentiment_probs = torch.softmax(sentiment_logits, dim=-1).cpu().numpy()
             sentiment_idx = torch.argmax(sentiment_logits, dim=-1).item()
             sentiment_confidence = max(sentiment_probs[0])
             sentiment = sentiment_labels.get(str(sentiment_idx), "Unknown") if sentiment_confidence > 0.5 else "Unknown"
 
-            # Predict emotion
             emotion_logits = emotion_model(**inputs).logits
             emotion_probs = torch.softmax(emotion_logits, dim=-1).cpu().numpy()
             emotion_idx = torch.argmax(emotion_logits, dim=-1).item()
@@ -77,10 +72,7 @@ def is_greeting(user_input):
 
 
 def generate_therapeutic_response(user_input, topic, sentiment, emotion, conversation_stage, conversation_history):
-    """
-    Generate therapeutic responses based on conversation stage, classifications, and conversation history.
-    """
-    # Base system message
+
     system_message = "You are a conversational and supportive therapeutic assistant specializing in anxiety support."
 
     # Stage 0: Initial Greeting
@@ -128,22 +120,21 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
             "discussed. Provide encouragement and ask if there's anything else they would like to explore before concluding."
         )
 
-    # Handle Unknown Stages or Context
+    # Handle unknown stages or context
     else:
         user_prompt = (
             "Respond warmly and summarize the conversation so far. "
             "Ask the user if they’d like to revisit any topics or explore new concerns."
         )
 
-    # Trim conversation history if it exceeds a safe number of turns
-    MAX_TURNS = 20  # Adjust this based on your expected conversation length
+    MAX_TURNS = 20
     if len(conversation_history) > MAX_TURNS:
-        conversation_history = conversation_history[-MAX_TURNS:]  # Keep only the last 20 turns
+        conversation_history = conversation_history[-MAX_TURNS:]
 
     
-    # Build the messages from conversation history with summarization
+    # Build the messages from conversation history with summarization if too long
     if len(conversation_history) > MAX_TURNS:
-        conversation_history = conversation_history[-MAX_TURNS:]  # Trim the history if too long
+        conversation_history = conversation_history[-MAX_TURNS:] 
 
     history_summary = " ".join(
         [f"{msg['role'].capitalize()}: {msg['content']}" for msg in conversation_history]
@@ -155,7 +146,6 @@ def generate_therapeutic_response(user_input, topic, sentiment, emotion, convers
         {"role": "user", "content": f"The user said: {user_input}. {user_prompt}"}
     ]
 
-    # Generate response using OpenAI
     response = openai.ChatCompletion.create(
         model="ft:gpt-3.5-turbo-0125:personal::AYvfotKM",
         messages=messages
@@ -177,7 +167,7 @@ def main():
     # Initialize session state variables
     if "messages" not in st.session_state:
         st.session_state.messages = []
-        # Add the initial assistant message
+
         st.session_state.messages.append({
             "role": "assistant",
             "content": "Welcome! I'm here to help you manage anxiety and provide support. What's on your mind?"
@@ -203,7 +193,7 @@ def main():
     # Handle user input with validation
     prompt = st.chat_input("Type here...")
     if prompt is None or prompt.strip() == "":
-        return  # Do nothing if no input is provided
+        return
 
     # Check for session end command
     if prompt.strip().lower() == "end session":
@@ -215,7 +205,7 @@ def main():
 
     # Check if the user input is a greeting
     if is_greeting(prompt):
-        st.session_state.conversation_stage = 0  # Set conversation stage to 0 for greetings
+        st.session_state.conversation_stage = 0
         assistant_response = (
             "Hello! It's great to see you here. Feel free to share how you're feeling or what's been on your mind. "
             "I'm here to listen and support you."
@@ -223,24 +213,24 @@ def main():
         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
         with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
             st.markdown(assistant_response)
-        return  # Skip classification for greetings
+        return
 
-    # Append user message to session
+    # Add user message to session
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar="https://github.com/iisabelaaa/capstone/raw/main/user.png"):
         st.markdown(prompt)
 
     try:
-        # Classify the user input
+        # Classify user input
         topic, sentiment, emotion = classify_sentiment_and_emotion(prompt)
 
         # Update conversation stage
         if topic == "Unknown" and sentiment == "Unknown" and emotion == "Unknown":
-            st.session_state.conversation_stage = -1  # Stay in "unknown" stage
+            st.session_state.conversation_stage = -1 
         elif st.session_state.conversation_stage == 0:
-            st.session_state.conversation_stage = 1  # Move to stage 1 after initial input
+            st.session_state.conversation_stage = 1 
         else:
-            st.session_state.conversation_stage += 1  # Progress normally for other stages
+            st.session_state.conversation_stage += 1 
 
         # Generate the response using conversation history
         assistant_response = generate_therapeutic_response(
@@ -249,21 +239,21 @@ def main():
             sentiment=sentiment,
             emotion=emotion,
             conversation_stage=st.session_state.conversation_stage,
-            conversation_history=st.session_state.messages  # Pass the entire message history
+            conversation_history=st.session_state.messages 
         )
 
 
-        # Display and append assistant response
+        # Display and add assistant response
         with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
             st.markdown(assistant_response)
 
         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
     except Exception as e:
-        # Log error and ensure variables are handled
+
         st.error(f"An error occurred: {e}")
 
-        # Fallback response for error handling
+
         assistant_response = "I encountered an issue while processing your input. Could you please try rephrasing or sharing more details?"
         with st.chat_message("assistant", avatar="https://github.com/iisabelaaa/capstone/raw/main/assistant.png"):
             st.markdown(assistant_response)
